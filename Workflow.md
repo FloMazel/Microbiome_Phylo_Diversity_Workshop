@@ -24,13 +24,13 @@ software and data files as described in our [setup instructions](https://github.
 Please read [Hallam SJ *et al*. 2017. Sci Data 4: 170158](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5663219/) "Monitoring microbial responses to ocean deoxygenation in a model oxygen minimum zone" to learn more about the data used in this workshop. You can also check out this [short video](https://drive.google.com/file/d/1s6V263-Vj2KQ6rExOBaYn-UDOERyQVGZ/view?usp=sharing) showing how the sampling was done!
 
 
-# Data description
+### Data description
 The data in this workshop were collected as part of an on-going oceanographic time series program in Saanich Inlet, a seasonally anoxic fjord on the East coast of Vancouver Island, British Columbia 
 
 
 ## 2. Introduction <a name="Introduction"></a>
 
-### 2.1. 
+### 2.1. Theory
 Alpha, Beta and Gamma diversity
 Microbial units and the need of a phylogenetic framework
 
@@ -49,7 +49,7 @@ if (!require("ape")) install.packages("ape")
 if (!require("vegan")) install.packages("vegan")
 ```
 
-#### Setting your wotking directory 
+#### Setting your working directory 
 
 Copy the workshop folder "Working directory" from GitHub on your computer
 
@@ -84,6 +84,7 @@ See corresponding code (for now)
 #### FastTree
 
 Using the terminal 
+
 See corresponding code (for now)
 
 ## 3. Diversity analysis in R <a name="Diversity-analysis-in-R"></a>
@@ -99,8 +100,4 @@ Importing the data: OTU table, metadata and phylogenetic tree
 ### 3.4. Screening the phylogeentic scale: the BDTT analysis <a name="BDTT"></a>
 
 ### 3.5. Screening all the nodes of the phylogeny: PhyloFactor and Balance Trees <a name="creening-all-the-nodes"></a>
-
-
-
-## Introduction <a name="Introduction"></a>
 
