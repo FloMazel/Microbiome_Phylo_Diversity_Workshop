@@ -13,7 +13,7 @@ The workshop will be held at UBC (Vancouver) on the XX of June 2018
 
 You will find 
 1. The slides 
-2. A [document to help you set-up your laptop] (https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/SetUp.md)
+2. A [document to help you set-up your laptop](https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/SetUp.md)
 3. A [document describing the workflow of the workshop](https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/Workflow.md)
 2. The corresponding [R codes necessary to run the analysis](https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/Main_R_script.R)
 
