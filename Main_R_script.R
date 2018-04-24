@@ -10,6 +10,7 @@ if (!require("vegan")) install.packages("vegan")
 #load packages
 library(seqinr)
 library(ape)
+library(tidyverse)
 
 #Put here your working directory
 setwd("/Users/fmazel/Desktop/Recherche/En_cours/workshopMicrobiome/WorkingDirectory")
@@ -22,7 +23,10 @@ setwd("/Users/fmazel/Desktop/Recherche/En_cours/workshopMicrobiome/WorkingDirect
 ################################################################################
 
 # load the taxonomic file
-taxonomy=read.table("data/Saanich_cruise72_mothur_OTU_taxonomy.modified.txt",row.names=1,header=T)
+taxonomy.raw = read.table("data/Saanich_cruise72_mothur_OTU_taxonomy.taxonomy", sep="\t", header=TRUE, row.names=1)
+taxonomy= taxonomy %>% 
+  select(-Size) %>% 
+  separate(Taxonomy, c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"), sep=";")
 
 #Change the name of the fasta alignment file 
 alignment=read.fasta("data/mothur_intermediate_files/Saanich.final.opti_mcc.unique_list.0.03.rep.fasta")
@@ -117,6 +121,38 @@ dev.off()
 ################################################################################
 # Part II: Diversity Analysis in R 
 ################################################################################
+
+# 1. Import and clean up data
+
+#OTU table
+OTU = read.table("data/Saanich_cruise72_mothur_OTU_table.shared", sep="\t", header=TRUE, row.names=2)
+OTU.clean = OTU %>%
+  select(-label, -numOtus)
+
+#taxonomy 
+taxonomy = read.table("data/Saanich_cruise72_mothur_OTU_taxonomy.taxonomy", sep="\t", header=TRUE, row.names=1)
+taxonomy.clean = taxonomy %>% 
+  select(-Size) %>% 
+  separate(Taxonomy, c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"), sep=";")
+
+#metadata
+metadata = read.table("data/Saanich_cruise72_metadata.txt", sep="\t", header=TRUE, row.names=1)
+
+# Construct the phyloseq object 
+library(phyloseq)
+
+#Define parts of the phyloseq object.
+OTU.clean.physeq = otu_table(as.matrix(OTU.clean), taxa_are_rows=FALSE)
+tax.clean.physeq = tax_table(as.matrix(taxonomy.clean))
+metadata.physeq = sample_data(metadata)
+phylogeny.physeq=phy_tree(Tree)
+
+mothur = phyloseq(OTU.clean.physeq, tax.clean.physeq, metadata.physeq,phylogeny.physeq) #note how phyloseq discard OTUs from OTU table and taxonomy beqacsue they are not in the phylogeny 
+mothur
+
+#Rarefying!
+
+# 2. Taxonomic Beta-diversity
 
 
 

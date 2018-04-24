@@ -30,9 +30,35 @@ The data in this workshop were collected as part of an on-going oceanographic ti
 
 ## 2. Introduction <a name="Introduction"></a>
 
+### 2.1. 
 Alpha, Beta and Gamma diversity
 Microbial units and the need of a phylogenetic framework
 
+### 2.2. Getting started with R 
+
+#### Installing and loading packages
+
+At the beginning of every R script, you should have a dedicated space for loading R packages. R packages allow any R user to code reproducible functions and share them with the R community. Packages exist for anything ranging from microbial ecology to complex graphics to multivariate modeling and beyond. 
+
+In this workshop, we will use several packages 
+XXX
+
+```{r, message=FALSE}
+if (!require("seqinr")) install.packages("seqinr")
+if (!require("ape")) install.packages("ape")
+if (!require("vegan")) install.packages("vegan")
+```
+
+#### Setting your wotking directory 
+
+Copy the workshop folder "Working directory" from GitHub on your computer
+
+Then tell R that this is going to be the folder where we are going to work 
+
+In my case: 
+```{r, message=FALSE}
+setwd("/Users/fmazel/Desktop/Recherche/En_cours/workshopMicrobiome/WorkingDirectory")
+```
 
 ## 3. Building a microbial phylogenetic tree <a name="Building-a-microbial-phylogenetic-tree"></a>
 
@@ -52,13 +78,13 @@ We will use FastTree to reconsttuct the phylogeneic hypotheses. While fastTree i
 
 Using R 
 
-See corresponding code for now
+See corresponding code (for now)
 
 
 #### FastTree
 
 Using the terminal 
-	
+See corresponding code (for now)
 
 ## 3. Diversity analysis in R <a name="Diversity-analysis-in-R"></a>
 
