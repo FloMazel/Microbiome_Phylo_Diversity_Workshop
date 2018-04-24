@@ -1,5 +1,5 @@
 # Exploring the phylogenetic composition of microbiomes
-# F. Mazel and J. Sanders
+### F. Mazel and J. Sanders
 
 Welcome to the workshop !
 
