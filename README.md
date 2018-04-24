@@ -1,4 +1,5 @@
 # Exploring the phylogenetic composition of microbiomes
+# F. Mazel and J. Sanders
 
 Welcome to the workshop !
 
@@ -7,7 +8,8 @@ The workshop will be held at UBC (Vancouver) on the XX of June 2018
 
 ## Summary 
 
-
+Microorganisms are the most widespread form of Life on Earth, inhabiting
+most ecosystems (from animal guts to the deep ocean) and driving the bulk of global biogeochemical cycles. Yet, we still know little about the diversity distribution of microbiomes. Recent technical progresses, and in particular massive production of amplicon data --typically 16S reads-- have started to unravel microbiome diversity patterns. However, many questions remains. For example, what microbial unit should we use to study microbime compositional patterns (i.e. beta-diversity)? Should we use OTUs defined at 96% 16S similarity? ASV? In this workshop we propose to tackle this question by exploring the phylogenetic composition of microbiomes and thus avoiding a priori choices of microbial units. We will provide theoretical background and practical examples of such analysis using R.  
 
 ## Content of this page
 
