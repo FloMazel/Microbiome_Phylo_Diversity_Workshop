@@ -214,9 +214,9 @@ for (i in as.character(similarity_slices))
   for (j in predictors) 
   {
    res=unlist(adonis(formula = MultipleBetaJac[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
-   StatsRes[(StatsResJac$metric=="Jac")&(StatsResJac$predictors==j)&(StatsResJac$similarity_slices==i),3:5]=res
+   StatsRes[(StatsRes$metric=="Jac")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),3:5]=res
    res=unlist(adonis(formula = MultipleBetaBC[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
-   StatsRes[(StatsResJac$metric=="BC")&(StatsResJac$predictors==j)&(StatsResJac$similarity_slices==i),3:5]=res
+   StatsRes[(StatsRes$metric=="BC")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),3:5]=res
    }
 }
 
