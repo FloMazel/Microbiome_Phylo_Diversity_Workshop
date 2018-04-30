@@ -11,9 +11,13 @@ if (!require("vegan")) install.packages("vegan")
 library(seqinr)
 library(ape)
 library(tidyverse)
+library(vegan)
+library(phyloseq)
 
 #Put here your working directory
 setwd("/Users/fmazel/Desktop/Recherche/En_cours/workshopMicrobiome/WorkingDirectory")
+setwd("/Users/florentmqzel/Documents/GitHub/WorkingDirectory/")
+
 
 ################################################################################
 # Part I: Construct the phylogenetic Tree
@@ -24,7 +28,7 @@ setwd("/Users/fmazel/Desktop/Recherche/En_cours/workshopMicrobiome/WorkingDirect
 
 # load the taxonomic file
 taxonomy.raw = read.table("data/Saanich_cruise72_mothur_OTU_taxonomy.taxonomy", sep="\t", header=TRUE, row.names=1)
-taxonomy= taxonomy %>% 
+taxonomy= taxonomy.raw %>% 
   select(-Size) %>% 
   separate(Taxonomy, c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"), sep=";")
 
@@ -110,7 +114,11 @@ Archaea=row.names(taxonomy)[taxonomy$Domain=="Archaea"]
 MRCAnode=getMRCA(phy = Tree,tip = Archaea)
 
 #re root
-TreeNewRoot=root(phy=Tree, node=MRCAnode)
+TreeNewRoot=root(phy=Tree, node=MRCAnode,resolve.root = T)
+#TreeNewRoot1=reroot(tree=Tree, node.number =MRCAnode)
+
+TreeNewRoot
+write.tree(TreeNewRoot,'My_outputs/Saanish_FastTreeRooted')
 
 # Plot the tree with colours for Domains
 pdf("My_outputs/Phylogenetic_tree_colouredby_Domains_NewRoot.pdf",width=15,height=15)
@@ -123,6 +131,9 @@ dev.off()
 ################################################################################
 
 # 1. Import and clean up data
+
+#Tree
+Tree=read.tree('My_outputs/Saanish_FastTreeRooted')
 
 #OTU table
 OTU = read.table("data/Saanich_cruise72_mothur_OTU_table.shared", sep="\t", header=TRUE, row.names=2)
@@ -137,22 +148,79 @@ taxonomy.clean = taxonomy %>%
 
 #metadata
 metadata = read.table("data/Saanich_cruise72_metadata.txt", sep="\t", header=TRUE, row.names=1)
-
+metadata=metadata[,c("Depth_m","PO4_uM","SiO2_uM","NO3_uM","NH4_uM","CH4_nM" ,"Salinity_PSU")]
+#colnames(metadata)
 # Construct the phyloseq object 
-library(phyloseq)
 
 #Define parts of the phyloseq object.
 OTU.clean.physeq = otu_table(as.matrix(OTU.clean), taxa_are_rows=FALSE)
 tax.clean.physeq = tax_table(as.matrix(taxonomy.clean))
 metadata.physeq = sample_data(metadata)
+#Tree=drop.tip(Tree,sample(Tree$tip.label,3500))
 phylogeny.physeq=phy_tree(Tree)
 
 mothur = phyloseq(OTU.clean.physeq, tax.clean.physeq, metadata.physeq,phylogeny.physeq) #note how phyloseq discard OTUs from OTU table and taxonomy beqacsue they are not in the phylogeny 
 mothur
 
 #Rarefying!
+apply(otu_table(mothur),1,sum) # Number od reads by sample
 
-# 2. Taxonomic Beta-diversity
+# 2. Taxonomic and phylogenetic  Beta-diversity
+
+#Compute and compare metrics
+BC=vegdist(otu_table(mothur),method = "bray")
+Jaccard=vegdist(otu_table(mothur),method = "jac")
+UniFracBeta=UniFrac(mothur)
+
+#UniFracWBeta=UniFrac(mothur,weighted = T)
+plot(Jaccard,UniFracBeta)
+
+# Visualize Beta 
+ordi = ordinate(mothur, "PCoA", "unifrac", weighted=F)
+plot_ordination(mothur, ordi, color="Depth_m")
+
+ordi = ordinate(mothur, "PCoA", "bray", weighted=F)
+plot_ordination(mothur, ordi, color="Depth_m")
+
+# Test the relationship with environment using PERMANOVA
+adonis(BC~Depth_m,data=data.frame(sample_data(mothur)))
+adonis(Jaccard~Depth_m,data=data.frame(sample_data(mothur)))
+adonis(UniFracBeta~Depth_m,data=data.frame(sample_data(mothur)))
+
+# 3. BDTT
+
+#Recall the scale of divergence times
+Hnodes=getHnodes(Tree) 
+hist(Hnodes,n=150,xlim=c(0,.5))
+#defines the slices
+slices=c(seq(from=0,to=0.3,by=0.025)) 
+
+#Run BDTT 
+mat=t(as(otu_table(mothur), "matrix"))
+MultipleBetaJac=BDTT(similarity_slices=slices,tree=Tree,sampleOTUs=mat,onlyBeta=T,metric="jac")
+saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_Jaccard.RDS")  
+
+MultipleBetaBC=BDTT(similarity_slices=slices,tree=Tree,sampleOTUs=mat,onlyBeta=T,metric="bc")
+saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_BrayCurtis.RDS")  
 
 
+# 3. Statistical tests: 21 predictors * n number of slices = a lot of models!
+predictors=names(sample_data(mothur))
+StatsResJac=expand.grid(metric=c("Jac","BC"),predictors=predictors,similarity_slices=as.character(similarity_slices))
+StatsRes[["F.Model"]]=StatsRes[["R2"]]=StatsRes[["Pr(>F)"]]=NA
+
+for (i in as.character(similarity_slices))
+{
+  for (j in predictors) 
+  {
+   res=unlist(adonis(formula = MultipleBetaJac[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
+   StatsRes[(StatsResJac$metric=="Jac")&(StatsResJac$predictors==j)&(StatsResJac$similarity_slices==i),3:5]=res
+   res=unlist(adonis(formula = MultipleBetaBC[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
+   StatsRes[(StatsResJac$metric=="BC")&(StatsResJac$predictors==j)&(StatsResJac$similarity_slices==i),3:5]=res
+   }
+}
+
+# Plotting
+ggplot(aes(y=R2,x=similarity_slices,colour=predictors,group=predictors),data=StatsRes)+geom_point()+geom_line()+facet_wrap(~metric)
+ggsave("My_outputs/BDTT_Jaccard_BC.pdf",height = 7,width = 7)
 
