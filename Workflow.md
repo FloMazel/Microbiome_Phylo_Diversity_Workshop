@@ -334,10 +334,73 @@ adonis(Jaccard~Depth_m,data=data.frame(sample_data(mothur)))
 adonis(UniFracBeta~Depth_m,data=data.frame(sample_data(mothur)))
 ```
 
-	 
-### 3.3. Phylogenetic beta-diversity <a name="Phylogenetic-Beta-diversity"></a>
-	
-### 3.4. Screening the phylogeentic scale: the BDTT analysis <a name="BDTT"></a>
+### 3.3. Screening the phylogenetic scale <a name="BDTT"></a>
+
+#### 3.3.1 Copmuting Beta-diversity
+
+
+We now go a step ahead and screen the phylogentic scale to study the compositipon of the microbiomes. First, we check what are the values of this scale, i.e. the scale of divergence times, in substitution/site. 
+
+```{r, message=FALSE}
+Hnodes=getHnodes(Tree) 
+hist(Hnodes,n=150,xlim=c(0,.5))
+```
+
+We can then define the set of discrete threshold used to build different set of microbial OTUs
+
+```{r, message=FALSE}
+slices=c(seq(from=0,to=0.3,by=0.025)) 
+```
+
+The idea the is to compute beta-doversity matrices for all these slices: 
+
+We first extract a OTU table matrix from the phyloseq object
+```{r, message=FALSE}
+mat=t(as(otu_table(mothur), "matrix"))
+```
+
+and then run the analysis (for Jaccard and Bray Curtis)
+
+```{r, message=FALSE}
+MultipleBetaJac=BDTT(similarity_slices=slices,tree=Tree,sampleOTUs=mat,onlyBeta=T,metric="jac")
+saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_Jaccard.RDS")  
+
+MultipleBetaBC=BDTT(similarity_slices=slices,tree=Tree,sampleOTUs=mat,onlyBeta=T,metric="bc")
+saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_BrayCurtis.RDS")  
+```
+
+#### 3.3.2. Statistical link to metadata
+
+As for the simple beta-diversity tests, we then link the microbiome composition to our metadata. In our case, we need to construct models for each threshold independently:
+
+We first rpepare the result table: 
+
+```{r, message=FALSE}
+predictors=names(sample_data(mothur))
+StatsRes=expand.grid(similarity_slices=as.character(similarity_slices),predictors=predictors,metric=c("Jac","BC"))
+StatsRes[["F.Model"]]=StatsRes[["R2"]]=StatsRes[["Pr(>F)"]]=NA
+```
+and then "fill" it without the models that we construct in loop: 
+
+```{r, message=FALSE}
+for (i in as.character(similarity_slices))
+{
+  for (j in predictors) 
+  {
+   res=unlist(adonis(formula = MultipleBetaJac[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
+   StatsRes[(StatsRes$metric=="Jac")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),4:6]=res
+   res=unlist(adonis(formula = MultipleBetaBC[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
+   StatsRes[(StatsRes$metric=="BC")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),4:6]=res
+   }
+}
+```
+
+We can then plot the profiles of R2 along the phylogenetic time scale:
+
+```{r, message=FALSE}
+ggplot(aes(y=R2,x=similarity_slices,colour=predictors,group=predictors),data=StatsRes)+geom_point()+geom_line()+facet_wrap(~metric)
+ggsave("My_outputs/BDTT_Jaccard_BC.pdf",height = 7,width = 10)
+```
 
 ### 3.5. Screening all the nodes of the phylogeny: PhyloFactor and Balance Trees <a name="creening-all-the-nodes"></a>
 
