@@ -128,7 +128,7 @@ for (i in 1:dim(Constrains)[1]){sequences[[i]]=Constrains[i,]}
 write.fasta(sequences, names=rownames(Constrains), file.out="My_outputs/Phylogenetic_Constrains.fasta", open = "w", nbchar = 60, as.string = FALSE)
 ```
 
-##### Prune the alignment to sequences with assigned domains
+Prune the alignment to sequences with assigned domains
 
 ```{r, message=FALSE}
 alignment=alignment[rownames(Constrains)]
