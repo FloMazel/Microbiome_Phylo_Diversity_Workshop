@@ -7,13 +7,16 @@ output:
 
 Some of this code as been copied and adapted from the [ECOSCOPE GitHub account](https://github.com/EDUCE-UBC) 
 
-You need to install and test R and RStudio before the workshop.
+You need to install and test R, RStudio and FastTree before the workshop.
 The installation process is simple on all major platforms, and mostly
 consists of downloading and running the installers appropriate to your
 platform. Please contact the instructors if you run into difficulties
 so we can help you show up with a computer properly set up for the
 workshop.
 
+## FastTree
+
+* [Install FastTree](http://www.microbesonline.org/fasttree/#Install), a free software. Follow the instruction given on the website
 
 ## R and RStudio
 
@@ -87,5 +90,5 @@ The above is sufficient preparation for this workship but here are some links if
 * More about add-on packages in the R Installation and Administration Manual
      - <http://cran.r-project.org/doc/manuals/R-admin.html#Add_002don-packages>
      
-vrfv
+
 

@@ -31,7 +31,7 @@ The data in this workshop were collected as part of an on-going oceanographic ti
 ## 2. Introduction <a name="Introduction"></a>
 
 ### 2.1. Theory
-Alpha, Beta and Gamma diversity
+General concepts: Alpha, Beta and Gamma diversity
 Microbial units and the need of a phylogenetic framework
 
 ### 2.2. Getting started with R 
@@ -65,20 +65,75 @@ setwd("/Users/fmazel/Desktop/Recherche/En_cours/workshopMicrobiome/WorkingDirect
 ### 2.1. Alignment <a name="Alignment"></a>
 
 We are not going to cover this stage here, as it will be carried out in other workshops. 
-Many software offer to align sequqnces, some of them are wrapped within [Mothur](https://www.mothur.org) or [Qiime2](https://qiime2.org)
+Many software offer to align sequences, some of them are wrapped within [Mothur](https://www.mothur.org) or [Qiime2](https://qiime2.org)
 For example you can look at this [tutorial](https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/data/mothur_pipeline.html) producing the data we are going to use here. 
 
 ### 2.2. Tree Building <a name="Tree-Building"></a>
 
-Typical read length in microbiome studies are relatively short and have thus contains limited information to reconstruct phylogeentic trees, especially to reconstruct deep branches. To avoid biased phylogenies, we thus constrains deep branches to follow taxonomic classificaiton as we know that large taxonomic clades are made to be monphyletic (informations based on longer sequences). The choice of the constrains is not easy. Here we will constain tree reconstruction by Domain (Bacteria/Archea) and phylums.
+Typical read length in microbiome studies are relatively short and have thus contains limited information to reconstruct phylogeentic trees, especially to reconstruct deep branches. To avoid biased phylogenies, we thus constrains deep branches to follow taxonomic classification as it is admitted that large taxonomic clades are monophyletic (informations based on longer sequences). The choice of the constrains is not easy. Here we will constain tree reconstruction by Domain (Bacteria/Archea) and phylums.
 
-We will use FastTree to reconsttuct the phylogeneic hypotheses. While fastTree is not the best software to reconstruct phylogenies (because it made a lot of approaximations), it has the huge avantage to be fast, which is often critical in microbial species, as there are a very high number of species. 
+We will use FastTree to reconsttuct the phylogeneic hypotheses. While fastTree is not the best software to reconstruct phylogenies (because it makes a lot of approximations), it has the huge avantage to be fast, which is often critical in microbial species, as there are a very high number of species. 
 
 #### Topological constrains
 
-Using R 
+##### Load the taxonomic file
 
-See corresponding code (for now)
+```{r, message=FALSE}
+taxonomy.raw = read.table("data/Saanich_cruise72_mothur_OTU_taxonomy.taxonomy", sep="\t", header=TRUE, row.names=1)
+taxonomy= taxonomy.raw %>% 
+  select(-Size) %>% 
+  separate(Taxonomy, c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"), sep=";")
+```
+
+##### Change the name of the fasta alignment file 
+
+```{r, message=FALSE}
+alignment=read.fasta("data/mothur_intermediate_files/Saanich.final.opti_mcc.unique_list.0.03.rep.fasta")
+names(alignment)=rownames(taxonomy)
+```
+
+##### Remove OTUS not assigned to a domain
+
+```{r, message=FALSE}
+taxonomy=subset(taxonomy,!Domain=="unknown")
+```
+
+##### Domain constrains
+
+```{r, message=FALSE}
+taxonomy[["Bacteria"]][taxonomy$Domain=="Bacteria"]=1
+taxonomy[["Bacteria"]][taxonomy$Domain=="Archaea"]=0
+```
+
+##### Phylum constrains
+
+```{r, message=FALSE}
+Phylum=unique(taxonomy$Phylum)
+Phylum=subset(Phylum,!Phylum=="unknown_unclassified") #remove this factor
+
+for (i in Phylum)
+  {
+  taxonomy[[as.character(i)]][taxonomy$Phylum==i]=1
+  taxonomy[[as.character(i)]][!taxonomy$Phylum==i]=0
+  }
+
+Constrains=taxonomy[,c("Bacteria",as.character(Phylum))] #keep only the constrains 
+```
+
+##### Convert to fasta file
+
+```{r, message=FALSE}
+sequences=list()
+for (i in 1:dim(Constrains)[1]){sequences[[i]]=Constrains[i,]}
+write.fasta(sequences, names=rownames(Constrains), file.out="My_outputs/Phylogenetic_Constrains.fasta", open = "w", nbchar = 60, as.string = FALSE)
+```
+
+##### Prune the alignment to sequences with assigned domains
+
+```{r, message=FALSE}
+alignment=alignment[rownames(Constrains)]
+write.fasta(alignment, names=names(alignment), file.out="My_outputs/Saanich.final.opti_mcc.unique_list.0.03.rep_Names_Modified.fasta", open = "w", nbchar = 60, as.string = FALSE)
+```
 
 
 #### FastTree

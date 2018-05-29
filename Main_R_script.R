@@ -206,7 +206,7 @@ saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_BrayCurtis.RDS")
 
 # 3. Statistical tests: 21 predictors * n number of slices = a lot of models!
 predictors=names(sample_data(mothur))
-StatsResJac=expand.grid(metric=c("Jac","BC"),predictors=predictors,similarity_slices=as.character(similarity_slices))
+StatsRes=expand.grid(similarity_slices=as.character(similarity_slices),predictors=predictors,metric=c("Jac","BC"))
 StatsRes[["F.Model"]]=StatsRes[["R2"]]=StatsRes[["Pr(>F)"]]=NA
 
 for (i in as.character(similarity_slices))
@@ -214,13 +214,13 @@ for (i in as.character(similarity_slices))
   for (j in predictors) 
   {
    res=unlist(adonis(formula = MultipleBetaJac[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
-   StatsRes[(StatsRes$metric=="Jac")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),3:5]=res
+   StatsRes[(StatsRes$metric=="Jac")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),4:6]=res
    res=unlist(adonis(formula = MultipleBetaBC[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
-   StatsRes[(StatsRes$metric=="BC")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),3:5]=res
+   StatsRes[(StatsRes$metric=="BC")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),4:6]=res
    }
 }
 
 # Plotting
 ggplot(aes(y=R2,x=similarity_slices,colour=predictors,group=predictors),data=StatsRes)+geom_point()+geom_line()+facet_wrap(~metric)
-ggsave("My_outputs/BDTT_Jaccard_BC.pdf",height = 7,width = 7)
+ggsave("My_outputs/BDTT_Jaccard_BC.pdf",height = 7,width = 10)
 
