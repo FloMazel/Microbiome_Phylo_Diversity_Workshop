@@ -163,7 +163,7 @@ mothur = phyloseq(OTU.clean.physeq, tax.clean.physeq, metadata.physeq,phylogeny.
 mothur
 
 #Rarefying!
-apply(otu_table(mothur),1,sum) # Number od reads by sample
+#apply(otu_table(mothur),1,sum) # Number od reads by sample
 
 # 2. Taxonomic and phylogenetic  Beta-diversity
 
