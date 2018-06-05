@@ -79,13 +79,13 @@ source("./R functions/BDTT_functions.R")
 
 ## 3. Building a microbial phylogenetic tree <a name="Building-a-microbial-phylogenetic-tree"></a>
 
-### 2.1. Alignment <a name="Alignment"></a>
+### 3.1. Alignment <a name="Alignment"></a>
 
 We are not going to cover this stage here, as it will be carried out in other workshops. 
 Many software offer to align sequences, some of them are wrapped within [Mothur](https://www.mothur.org) or [Qiime2](https://qiime2.org)
 For example you can look at this [tutorial](https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/data/mothur_pipeline.html) producing the data we are going to use here. 
 
-### 2.2. Tree Building <a name="Tree-Building"></a>
+### 3.2. Tree Building <a name="Tree-Building"></a>
 
 Typical read length in microbiome studies are relatively short and have thus contains limited information to reconstruct phylogeentic trees, especially to reconstruct deep branches. To avoid biased phylogenies, we thus constrains deep branches to follow taxonomic classification as it is admitted that large taxonomic clades are monophyletic (informations based on longer sequences). The choice of the constrains is not easy. Here we will constain tree reconstruction by Domain (Bacteria/Archea) and phylums.
 
@@ -179,7 +179,7 @@ For the sake of comparison, we will laso construct the tree WITHOUT topological 
 #Desktop/Programmes_Unix/FastTree -gtr -cat 20 -nt Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Saanich.final.opti_mcc.unique_list.0.03.rep_Names_Modified.fasta > Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Saanish_FastTree_withoutConstrains
 ```
 
-### 2.3. Tree Visualisation <a name="Tree-Visualisation"></a>
+### 3.3. Tree Visualisation <a name="Tree-Visualisation"></a>
 
 We now are coming back to R. We first need to load the trees we just constructed 
 
@@ -228,7 +228,7 @@ dev.off()
 
 Rapidly compare the two trees, what do you observe? 
 
-### 2.3. Re-root the tree (Archaea Vs Bacteria) <a name="Tree-Rerooting"></a>
+### 3.3. Re-root the tree (Archaea Vs Bacteria) <a name="Tree-Rerooting"></a>
 
 A phylogenetic tree is characterized by a root, which indicate the direction of evolution (from the root to the tip). For "prokariotes", we will assume to be on the branch separating bacteria from archaea. 
 
@@ -262,9 +262,9 @@ dev.off()
 
 We now have a better tree. And we are going to use it to analyse microbiome composition patterns!
 
-## 3. Diversity analysis in R <a name="Diversity-analysis-in-R"></a>
+## 4. Diversity analysis in R <a name="Diversity-analysis-in-R"></a>
 
-### 3.1. Basics <a name="Basics"></a>
+### 4.1. Basics <a name="Basics"></a>
 
 Importing the data: OTU table, metadata and phylogenetic tree
 
@@ -313,7 +313,7 @@ mothur
 ```
 
 
-### 3.2. Classic beta-diversity analysis <a name="Classics"></a>
+### 4.2. Classic beta-diversity analysis <a name="Classics"></a>
 
 We first compute classic metrics of beta-diversity
 
@@ -351,9 +351,9 @@ adonis(Jaccard~Depth_m,data=data.frame(sample_data(mothur)))
 adonis(UniFracBeta~Depth_m,data=data.frame(sample_data(mothur)))
 ```
 
-### 3.3. Screening the phylogenetic scale <a name="BDTT"></a>
+### 4.3. Screening the phylogenetic scale <a name="BDTT"></a>
 
-#### 3.3.1 Copmuting Beta-diversity
+#### 4.3.1 Copmuting Beta-diversity
 
 
 We now go a step ahead and screen the phylogentic scale to study the compositipon of the microbiomes. First, we check what are the values of this scale, i.e. the scale of divergence times, in substitution/site. 
@@ -386,7 +386,7 @@ MultipleBetaBC=BDTT(similarity_slices=slices,tree=Tree,sampleOTUs=mat,onlyBeta=T
 saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_BrayCurtis.RDS")  
 ```
 
-#### 3.3.2. Statistical link to metadata
+#### 4.3.2. Statistical link to metadata
 
 As for the simple beta-diversity tests, we then link the microbiome composition to our metadata. In our case, we need to construct models for each threshold independently:
 
@@ -419,5 +419,6 @@ ggplot(aes(y=R2,x=similarity_slices,colour=predictors,group=factor(predictors)),
 ggsave("My_outputs/BDTT_Jaccard_BC.pdf",height = 7,width = 10)
 ```
 
-### 3.5. Screening all the nodes of the phylogeny: PhyloFactor and Balance Trees <a name="creening-all-the-nodes"></a>
+### 4.5. Screening all the nodes of the phylogeny: PhyloFactor and Balance Trees <a name="screening-all-the-nodes"></a>
 
+#### 4.5.1. Phylo
