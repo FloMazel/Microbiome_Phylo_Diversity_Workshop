@@ -1,5 +1,5 @@
 # BDTT for non-ultrametric trees
-#library(phytools)
+library(phytools)
 library(betapart)
 library(abind)
 library(Matrix)

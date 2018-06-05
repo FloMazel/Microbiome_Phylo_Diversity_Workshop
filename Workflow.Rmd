@@ -47,6 +47,12 @@ XXX
 if (!require("seqinr")) install.packages("seqinr")
 if (!require("ape")) install.packages("ape")
 if (!require("vegan")) install.packages("vegan")
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("phyloseq")) install.packages("phyloseq")
+if (!require("betapart")) install.packages("betapart")
+if (!require("abind")) install.packages("abind")
+if (!require("Matrix")) install.packages("Matrix")
+if (!require("phytools")) install.packages("phytools")
 ```
 
 #### Setting your working directory 
@@ -57,7 +63,18 @@ Then tell R that this is going to be the folder where we are going to work
 
 In my case: 
 ```{r, message=FALSE}
-setwd("/Users/fmazel/Desktop/Recherche/En_cours/workshopMicrobiome/WorkingDirectory")
+setwd("/Users/jonsanders/Dropbox/Documents/Research/Education/Workshops/Microbiome_Phylo_Diversity_Workshop")
+```
+
+#### Importing custom R functions
+
+We have written some custom R functions for use in this workshop. It is good
+practice to define these functions in a separate file and then to import them
+into your scripts, so that you don't duplicate the code. (Duplication, you 
+may recall, can end up in mutation! ;) )
+
+```{r, message=FALSE}
+source("./R functions/BDTT_functions.R")
 ```
 
 ## 3. Building a microbial phylogenetic tree <a name="Building-a-microbial-phylogenetic-tree"></a>
@@ -204,8 +221,8 @@ It would be now interesting to check the impact of the topological contrains on 
 
 ```{r, message=FALSE}
 pdf("My_outputs/Phylogenetic_tree_colouredby_Phylum_NoConstrains.pdf",width=15,height=15)
-plot(TreeNoC,type="fan",cex=.3,tip.color=coloursDomains[TreeNoC$tip.label])
-legend(1, 1, legend=names(paletteDomains),fill=paletteDomains, cex=1)
+plot(TreeNoC,type="fan",cex=.3,tip.color=coloursPhylums[TreeNoC$tip.label])
+legend(1, 1, legend=names(palettePhylums),fill=palettePhylums, cex=1)
 dev.off()
 ```
 
@@ -373,17 +390,17 @@ saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_BrayCurtis.RDS")
 
 As for the simple beta-diversity tests, we then link the microbiome composition to our metadata. In our case, we need to construct models for each threshold independently:
 
-We first rpepare the result table: 
+We first prepare the result table: 
 
 ```{r, message=FALSE}
 predictors=names(sample_data(mothur))
-StatsRes=expand.grid(similarity_slices=as.character(similarity_slices),predictors=predictors,metric=c("Jac","BC"))
+StatsRes=expand.grid(similarity_slices=as.character(slices),predictors=predictors,metric=c("Jac","BC"))
 StatsRes[["F.Model"]]=StatsRes[["R2"]]=StatsRes[["Pr(>F)"]]=NA
 ```
 and then "fill" it without the models that we construct in loop: 
 
 ```{r, message=FALSE}
-for (i in as.character(similarity_slices))
+for (i in as.character(slices))
 {
   for (j in predictors) 
   {
@@ -398,7 +415,7 @@ for (i in as.character(similarity_slices))
 We can then plot the profiles of R2 along the phylogenetic time scale:
 
 ```{r, message=FALSE}
-ggplot(aes(y=R2,x=similarity_slices,colour=predictors,group=predictors),data=StatsRes)+geom_point()+geom_line()+facet_wrap(~metric)
+ggplot(aes(y=R2,x=similarity_slices,colour=predictors,group=factor(predictors)),data=StatsRes)+geom_point()+geom_line()+facet_wrap(~metric)
 ggsave("My_outputs/BDTT_Jaccard_BC.pdf",height = 7,width = 10)
 ```
 
