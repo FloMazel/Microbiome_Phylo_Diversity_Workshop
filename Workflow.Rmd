@@ -53,6 +53,7 @@ if (!require("betapart")) install.packages("betapart")
 if (!require("abind")) install.packages("abind")
 if (!require("Matrix")) install.packages("Matrix")
 if (!require("phytools")) install.packages("phytools")
+if (!require("ggplot2")) install.packages("ggplot2")
 ```
 
 #### Setting your working directory 
@@ -239,7 +240,7 @@ Archaea=row.names(taxonomy)[taxonomy$Domain=="Archaea"]
 MRCAnode=getMRCA(phy = Tree,tip = Archaea)
 ```
 
-Then, we re-root the tre on this branch
+Then, we re-root the tree on this branch
 
 ```{r, message=FALSE}
 TreeNewRoot=root(phy=Tree, node=MRCAnode,resolve.root = T)
@@ -353,7 +354,7 @@ adonis(UniFracBeta~Depth_m,data=data.frame(sample_data(mothur)))
 
 ### 4.3. Screening the phylogenetic scale <a name="BDTT"></a>
 
-#### 4.3.1 Copmuting Beta-diversity
+#### 4.3.1 Computing Beta-diversity
 
 
 We now go a step ahead and screen the phylogentic scale to study the compositipon of the microbiomes. First, we check what are the values of this scale, i.e. the scale of divergence times, in substitution/site. 
@@ -421,4 +422,209 @@ ggsave("My_outputs/BDTT_Jaccard_BC.pdf",height = 7,width = 10)
 
 ### 4.5. Screening all the nodes of the phylogeny: PhyloFactor and Balance Trees <a name="screening-all-the-nodes"></a>
 
-#### 4.5.1. Phylo
+#### 4.5.1. PhyloFactor
+
+```{r, message=FALSE}
+require(phylofactor)
+```
+
+#### Loading data
+
+We will load data the same data as above. PhyloFactor has some specific requirements for data format that will require further modifications, which are explained below.
+
+The tree: 
+```{r, message=FALSE}
+Tree=read.tree('My_outputs/Saanish_FastTreeRooted')
+```
+
+The OTU table:
+```{r, message=FALSE}
+OTU = read.table("data/Saanich_cruise72_mothur_OTU_table.shared", sep="\t", header=TRUE, row.names=2)
+OTU.clean = OTU %>%
+  select(-label, -numOtus)
+
+# phylofactor uses OTU tables in matrix format, with features as rows and samples as columns
+
+OTU.matrix <- as.matrix(t(OTU.clean))
+
+# we will need to subset the OTU table to only those tips found in the tree
+OTU.matrix <- OTU.matrix[row.names(OTU.matrix) %in% Tree$tip.label,]
+```
+
+The taxonomic file:
+```{r, message=FALSE}
+taxonomy = read.table("data/Saanich_cruise72_mothur_OTU_taxonomy.taxonomy", sep="\t", header=TRUE, row.names=1)
+taxonomy.clean = taxonomy %>% 
+  select(-Size) %>% 
+  separate(Taxonomy, c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"), sep=";")
+
+taxonomy <- taxonomy %>% select(-Size)
+taxonomy$OTU_ID = row.names(taxonomy)
+taxonomy <- taxonomy[rownames(OTU.matrix),]
+```
+
+The metadata:
+```{r, message=FALSE}
+metadata = read.table("data/Saanich_cruise72_metadata.txt", sep="\t", header=TRUE, row.names=1)
+metadata=metadata[,c("Depth_m","PO4_uM","SiO2_uM","NO3_uM","NH4_uM","CH4_nM" ,"Salinity_PSU")]
+
+# similarly, we need to subset metadata to just those samples in our data
+
+metadata <- metadata[colnames(OTU.matrix),]
+```
+
+
+#### Simulate factor on bacterial phylogeny
+
+Fundamentally, PhyloFactorization is a method for seeing how characteristics change across a phylogeny, and identifying the edges of the phylogeny where they change most significantly. 
+
+We can demonstrate this by simulating some random data on top of our previously calculated microbial phylogeny, and adjusting the values for a few of the groups. You can imagine this simulated data as a characteristic of the microbes -- say, genome size, or cell diameter. 
+
+Here, we're creating a new variable called `CellDiam`, and for each tip on our tree `Tree`, drawing a value from the log normal distribution using the function `rlnorm`. Then, we'll re-draw values for different subsets of the tree using values that are increased or decreased by 4-fold. 
+
+```{r}
+
+set.seed(1)
+CellDiam <- rlnorm(length(Tree$tip.label))
+
+# let's make Arcobacter and Actinobacteria different from the rest
+
+arcobacter <- Tree$tip.label %in% row.names(taxonomy.clean[taxonomy.clean$Genus == 'Arcobacter',])
+actinobacteria <- (Tree$tip.label %in% row.names(taxonomy.clean[taxonomy.clean$Phylum == 'Actinobacteria',]))
+
+CellDiam[arcobacter] <- rlnorm(sum(arcobacter))*4
+CellDiam[actinobacteria] <- rlnorm(sum(actinobacteria))/4
+
+logCellDiam <- log(CellDiam)
+```
+
+Now we can PhyloFactor the tree to discover the branches that lead to the tips with the changed values. The function `twoSampleFactor` uses two-sample tests to identify edges separating two parts of the tree that differ with respect to a data vector -- in this case, the simulated `CellDiam` values.
+
+```{r}
+pf_twoSample <- twoSampleFactor(logCellDiam, Tree, nfactors=5)
+```
+
+We can look at a summary of the results by calling the object:
+
+```{r}
+pf_twoSample
+```
+
+Note that it returned 5 factors, but we only changed two clades on the tree! What happened?
+
+PhyloFactor works by sequentially partitioning the tree from the most to the least important groups with respect to your given criteria. Note that the first two factors do in fact correspond to large groups, roughly matching the clades we adjusted! The remaining top five factors are individual tips that randomly obtained extreme draws from the simulated distribution.
+
+```{r}
+print(sum(actinobacteria))
+print(sum(arcobacter))
+```
+
+And although statistical significance is still not well-understood for PhyloFactorization, you can see from the vector of p-values associated with these factors that there is a steep drop-off after the first two factors:
+
+```{r}
+pf_twoSample$pvals
+```
+
+We can also visualize these phylogenetic factors on the phylogeny itself using the `pf.tree` function in PhyloFactor, which creates a `ggtree` plot highlighting each returned factor:
+
+```{r}
+cellDiam.tree <- pf.tree(pf_twoSample)
+cellDiam.tree$ggplot
+```
+
+Factor colors are written out as a separate legend element in the returned object:
+
+```{r}
+cellDiam.tree$legend
+```
+
+#### Testing for phylogenetic groups correlated with metadata: linear regression
+
+This will find the phylogenetic factors that vary most predictably with depth. By using the built-in choice function 'F', we are asserting that we want only the factors with the largest F score to be retained -- up to 9 factors. The `stop.early` parameter tells PhyloFactor to stop searching for new factors once it drops below a certain significance threshold (see the documentation for more on the heuristic used and its justification).
+
+
+```{r}
+pf_depth_F <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 9, ncores=2, stop.early = T, choice='F')
+```
+
+
+We can then do the same for the next factor.
+
+```{r}
+s_pf_depth.summary.2 <- summary(pf_depth_F, factor=2)
+
+s_pf_depth.summary.2
+```
+
+
+In this case, the factor actually comprises 19 tips in a single monophyletic clade.
+
+```{r}
+pf.taxa(pf_depth_F, taxonomy, factor=2)$group1
+```
+
+Which, it turns out, encompasses bacteria in the Rhodobacteraceae group of the Alphaproteobacteria. This factor also appears to be tightly correlated to depth:
+
+```{r}
+ggplot(s_pf_depth.summary.2$data, aes(x = Depth_m, y = Data)) + 
+geom_point() + 
+geom_smooth(method='lm')
+```
+
+
+The previous results were ranked according to the factors that had the strongest correlation, as measured by effect size (F). We can also rank factors according to the total proportion of variance explained, by setting `choice` equal to `'var'`:
+
+```{r}
+pf_depth_V <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 9, ncores=2, stop.early = T, choice='var')
+```
+
+```{r}
+pf_depth_V
+```
+
+Note that when optimizing for total variance explained, PhyloFactor will tend to find larger clades, as they represent a larger overall proportion of the data. 
+
+```{r}
+s_pf_depth.V.summary.1 <- summary(pf_depth_V, factor=1)
+```
+
+```{r}
+pf.taxa(pf_depth_V, taxonomy, factor=1)$group1
+```
+
+Which, it turns out, encompasses bacteria in the Rhodobacteraceae group of the Alphaproteobacteria. This factor also appears to be tightly correlated to depth:
+
+```{r}
+ggplot(s_pf_depth.V.summary.1$data, aes(x = Depth_m, y = Data)) + 
+geom_point() + 
+geom_smooth(method='lm')
+```
+
+```{r}
+s_pf_depth.V.summary.2 <- summary(pf_depth_V, factor=2)
+
+pf.taxa(pf_depth_V, taxonomy, factor=2)$group1
+```
+
+```{r}
+ggplot(s_pf_depth.V.summary.2$data, aes(x = Depth_m, y = Data)) + 
+geom_point() + 
+geom_smooth(method='lm')
+```
+
+```{r}
+pf_depth_F <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 9, ncores=2, stop.early = T, choice='F')
+```
+
+
+#### Comparing phylofactorization with two groups
+
+Let's combine all we've practiced so far to visualize using PhyloFactorization how different clades of the bacterial phylogeny respond to changes in different variables in our dataset. 
+
+We can use the `cowplot` package to combine different ggplot elements to simultaneously illustrate the ILR-values for individual PhyloFactors and their location on the phylogeny. For this, we'll just take the top three factors 
+
+#### Testing for phylogenetic groups correlated with meatadata: linear relationships
+
+#### Testing for phylogenetic groups correlated with metadata: non-linear models
+
+#### Testing for phylogenetic groups correlated with metadata: additive models
