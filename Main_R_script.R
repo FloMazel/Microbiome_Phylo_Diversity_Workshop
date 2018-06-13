@@ -6,15 +6,14 @@
 if (!require("seqinr")) install.packages("seqinr")
 if (!require("ape")) install.packages("ape")
 if (!require("vegan")) install.packages("vegan")
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("phyloseq")) install.packages("phyloseq")
+if (!require("betapart")) install.packages("betapart")
+if (!require("abind")) install.packages("abind")
+if (!require("Matrix")) install.packages("Matrix")
+if (!require("phytools")) install.packages("phytools")
 
-#load packages
-library(seqinr)
-library(ape)
-library(tidyverse)
-library(vegan)
-library(phyloseq)
-
-#Put here your working directory
+#Put here your working directory (i.e you need to replace the locaiton of the file to match the location of the downloaded folder on YOUR computer)
 setwd("/Users/fmazel/Desktop/Recherche/En_cours/workshopMicrobiome/WorkingDirectory")
 setwd("/Users/florentmqzel/Documents/GitHub/WorkingDirectory/")
 

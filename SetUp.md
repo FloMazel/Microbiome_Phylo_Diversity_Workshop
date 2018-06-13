@@ -73,6 +73,11 @@ Please install the following packages and their dependencies for use in this wor
 * ape
 * sequinR
 * vegan
+* betapart
+* abind
+* matrix
+* phytools
+* phyloseq
 
 ## Further resources
 
