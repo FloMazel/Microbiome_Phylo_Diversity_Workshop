@@ -575,45 +575,41 @@ geom_smooth(method='lm')
 The previous results were ranked according to the factors that had the strongest correlation, as measured by effect size (F). We can also rank factors according to the total proportion of variance explained, by setting `choice` equal to `'var'`:
 
 ```{r}
-pf_depth_V <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 9, ncores=2, stop.early = T, choice='var')
+pf_depth_var <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 9, ncores=2, stop.early = T, choice='var')
 ```
 
 ```{r}
-pf_depth_V
+pf_depth_var
 ```
 
 Note that when optimizing for total variance explained, PhyloFactor will tend to find larger clades, as they represent a larger overall proportion of the data. 
 
 ```{r}
-s_pf_depth.V.summary.1 <- summary(pf_depth_V, factor=1)
+s_pf_depth.var.summary.1 <- summary(pf_depth_var, factor=1)
 ```
 
 ```{r}
-pf.taxa(pf_depth_V, taxonomy, factor=1)$group1
+pf.taxa(pf_depth_var, taxonomy, factor=1)$group1
 ```
 
 Which, it turns out, encompasses bacteria in the Rhodobacteraceae group of the Alphaproteobacteria. This factor also appears to be tightly correlated to depth:
 
 ```{r}
-ggplot(s_pf_depth.V.summary.1$data, aes(x = Depth_m, y = Data)) + 
+ggplot(s_pf_depth.var.summary.1$data, aes(x = Depth_m, y = Data)) + 
 geom_point() + 
 geom_smooth(method='lm')
 ```
 
 ```{r}
-s_pf_depth.V.summary.2 <- summary(pf_depth_V, factor=2)
+s_pf_depth.var.summary.2 <- summary(pf_depth_var, factor=2)
 
-pf.taxa(pf_depth_V, taxonomy, factor=2)$group1
+pf.taxa(pf_depth_var, taxonomy, factor=2)$group1
 ```
 
 ```{r}
-ggplot(s_pf_depth.V.summary.2$data, aes(x = Depth_m, y = Data)) + 
+ggplot(s_pf_depth.var.summary.2$data, aes(x = Depth_m, y = Data)) + 
 geom_point() + 
 geom_smooth(method='lm')
-```
-
-```{r}
-pf_depth_F <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 9, ncores=2, stop.early = T, choice='F')
 ```
 
 
@@ -623,8 +619,70 @@ Let's combine all we've practiced so far to visualize using PhyloFactorization h
 
 We can use the `cowplot` package to combine different ggplot elements to simultaneously illustrate the ILR-values for individual PhyloFactors and their location on the phylogeny. For this, we'll just take the top three factors 
 
-#### Testing for phylogenetic groups correlated with meatadata: linear relationships
+First, we'll write a short helper function to format the individual inset XY plots.
 
-#### Testing for phylogenetic groups correlated with metadata: non-linear models
+```{r}
 
-#### Testing for phylogenetic groups correlated with metadata: additive models
+inset_plot <- function(pf, factor, variable, color) {
+  pf_s <- summary(pf, factor=factor)
+  
+  p <- ggplot(pf_s$data, aes_string(x = variable, y = 'Data')) + 
+        geom_point(color = color) + 
+        geom_abline(slope = coef(pf$models[[factor]])[2],
+                    intercept = coef(pf$models[[factor]])[1])
+  
+  return(p)
+}
+```
+
+Now we can perform a phylofactorization of the bacterial phylogeny with respect to different variables of interest. We'll compare the bacterial groups responding to nitrate (NO3) and phosphate (PO4), two important and frequently limiting nutrients in oligotrophic environments. Let's grab the top three factors for each, according to total variance explained.
+
+```{r}
+pf_NO3_var <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~NO3_uM, nfactors = 3, ncores=2, choice='var')
+
+pf_PO4_var <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~PO4_uM, nfactors = 3, ncores=2, choice='var')
+```
+
+For each PhyloFactor object, we can use the `cowplot` library to combine separate `ggplot2` panels into a publication-ready image, showing both individual factors locations on the tree, and their response (in ILR-transformed space) to each predictor variable.
+
+```{r}
+# Draw the PhyloFactors on the phylogeny
+NO3_tree = pf.tree(pf_NO3_var)
+
+# Make inset plots for each factor
+g1_NO3 = inset_plot(pf_NO3_var,                  # The PhyloFactor object we just calculated
+                    1,                           # The first factor
+                    'NO3_uM',                    # Plotting against the NO3_uM variable
+                    NO3_tree$legend$colors[1])   # Use the color for this factor from the tree
+g2_NO3 = inset_plot(pf_NO3_var, 2, 'NO3_uM', NO3_tree$legend$colors[2])
+g3_NO3 = inset_plot(pf_NO3_var, 3, 'NO3_uM', NO3_tree$legend$colors[3])
+
+# Draw the inset plots composed with the PhyloFactor phylogeny
+ggdraw() +
+  draw_plot(NO3_tree$ggplot, 
+            x = 0, y = 0.05, width = .7, height = .7,scale = 1.8) +
+  draw_plot(g1_NO3, x = .7, y = .66, width = .3, height = .33) +
+  draw_plot(g2_NO3, x = .7, y = .33, width = .3, height = .33) +
+  draw_plot(g3_NO3, x = .7, y = 0, width = .3, height = .33) +
+  draw_plot_label(label = c("Phylogeny", "A", "B","C"), size = 15,
+                  x = c(0, 0.67, .67,.67), y = c(1, 1, 0.66,0.33))
+
+```
+```{r}
+# Repeat for the phosphate PhyloFactors
+PO4_tree = pf.tree(pf_PO4_var)
+
+g1_PO4 = inset_plot(pf_PO4_var, 1, 'PO4_uM', PO4_tree$legend$colors[1])
+g2_PO4 = inset_plot(pf_PO4_var, 2, 'PO4_uM', PO4_tree$legend$colors[2])
+g3_PO4 = inset_plot(pf_PO4_var, 3, 'PO4_uM', PO4_tree$legend$colors[3])
+
+ggdraw() +
+  draw_plot(PO4_tree$ggplot, 
+            x = 0, y = 0.05, width = .7, height = .7,scale = 1.8) +
+  draw_plot(g1_PO4, x = .7, y = .66, width = .3, height = .33) +
+  draw_plot(g2_PO4, x = .7, y = .33, width = .3, height = .33) +
+  draw_plot(g3_PO4, x = .7, y = 0, width = .3, height = .33) +
+  draw_plot_label(label = c("Phylogeny", "A", "B","C"), size = 15,
+                  x = c(0, 0.67, .67,.67), y = c(1, 1, 0.66,0.33))
+
+```
