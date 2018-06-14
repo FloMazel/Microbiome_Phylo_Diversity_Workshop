@@ -3,18 +3,17 @@
 ################################################################################
 
 # if the named package is not installed then install it
-if (!require("seqinr")) install.packages("seqinr")
-if (!require("ape")) install.packages("ape")
-if (!require("vegan")) install.packages("vegan")
-if (!require("tidyverse")) install.packages("tidyverse")
-if (!require("phyloseq")) install.packages("phyloseq")
-if (!require("betapart")) install.packages("betapart")
-if (!require("abind")) install.packages("abind")
-if (!require("Matrix")) install.packages("Matrix")
-if (!require("phytools")) install.packages("phytools")
+library(seqinr)
+library(ape)
+library(vegan)
+library(tidyverse)
+library(phyloseq)
+library(betapart)
+library(abind)
+library(tidyr)
+library(Matrix)
 
-#Put here your working directory (i.e you need to replace the locaiton of the file to match the location of the downloaded folder on YOUR computer)
-setwd("/Users/fmazel/Desktop/Recherche/En_cours/workshopMicrobiome/WorkingDirectory")
+#Put here your working directory (i.e you need to replace the location of the file to match the location of the downloaded folder on YOUR computer)
 setwd("/Users/florentmqzel/Documents/GitHub/WorkingDirectory/")
 
 
@@ -77,7 +76,9 @@ write.fasta(alignment, names=names(alignment), file.out="My_outputs/Saanich.fina
 # Part 1.3. Tree Visualization 
 #################################################
 
-#Load the trees
+# Load the trees
+# Note: If you did not contruct the tree, replace 'My_outputs' by 'My_outputs_Back_Up'
+
 Tree=read.tree('My_outputs/Saanish_FastTree')
 TreeNoC=read.tree('My_outputs/Saanish_FastTree_withoutConstrains')
 
@@ -101,8 +102,8 @@ dev.off()
 
 # check the impact of the topological contrains 
 pdf("My_outputs/Phylogenetic_tree_colouredby_Phylum_NoConstrains.pdf",width=15,height=15)
-plot(TreeNoC,type="fan",cex=.3,tip.color=coloursDomains[TreeNoC$tip.label])
-legend(1, 1, legend=names(paletteDomains),fill=paletteDomains, cex=1)
+plot(TreeNoC,type="fan",cex=.3,tip.color=coloursPhylums[TreeNoC$tip.label])
+legend(1, 1, legend=names(palettePhylums),fill=paletteDomains, cex=1)
 dev.off()
 
 # Part 1.4. Re-root the tree (Archaea Vs Bacteria)
@@ -132,6 +133,8 @@ dev.off()
 # 1. Import and clean up data
 
 #Tree
+# Note: If you did not contruct the tree, replace 'My_outputs' by 'My_outputs_Back_Up'
+
 Tree=read.tree('My_outputs/Saanish_FastTreeRooted')
 
 #OTU table
@@ -161,12 +164,12 @@ phylogeny.physeq=phy_tree(Tree)
 mothur = phyloseq(OTU.clean.physeq, tax.clean.physeq, metadata.physeq,phylogeny.physeq) #note how phyloseq discard OTUs from OTU table and taxonomy beqacsue they are not in the phylogeny 
 mothur
 
-#Rarefying!
-#apply(otu_table(mothur),1,sum) # Number od reads by sample
+# apply(otu_table(mothur),1,sum) # Number of reads by sample
+# At this point you can rarefy if needed
 
 # 2. Taxonomic and phylogenetic  Beta-diversity
 
-#Compute and compare metrics
+#Compute and compare metrics #NB -- Bray-Curtis and Jaccard are also implemeted in phyloseq; using vegdist FYI
 BC=vegdist(otu_table(mothur),method = "bray")
 Jaccard=vegdist(otu_table(mothur),method = "jac")
 UniFracBeta=UniFrac(mothur)
@@ -187,6 +190,7 @@ adonis(Jaccard~Depth_m,data=data.frame(sample_data(mothur)))
 adonis(UniFracBeta~Depth_m,data=data.frame(sample_data(mothur)))
 
 # 3. BDTT
+source("R functions/BDTT_functions.R")
 
 #Recall the scale of divergence times
 Hnodes=getHnodes(Tree) 
@@ -199,27 +203,39 @@ mat=t(as(otu_table(mothur), "matrix"))
 MultipleBetaJac=BDTT(similarity_slices=slices,tree=Tree,sampleOTUs=mat,onlyBeta=T,metric="jac")
 saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_Jaccard.RDS")  
 
-MultipleBetaBC=BDTT(similarity_slices=slices,tree=Tree,sampleOTUs=mat,onlyBeta=T,metric="bc")
-saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_BrayCurtis.RDS")  
-
+#MultipleBetaBC=BDTT(similarity_slices=slices,tree=Tree,sampleOTUs=mat,onlyBeta=T,metric="bc")
+#saveRDS(MultipleBetaBC,"My_outputs/Multiple_Resolution_Beta_BrayCurtis.RDS")  
+#Because it is slow to run, we will not run bray curtis but directly load it from the backUp
+MultipleBetaBC=readRDS("My_outputs/Multiple_Resolution_Beta_BrayCurtis.RDS")
 
 # 3. Statistical tests: 21 predictors * n number of slices = a lot of models!
 predictors=names(sample_data(mothur))
-StatsRes=expand.grid(similarity_slices=as.character(similarity_slices),predictors=predictors,metric=c("Jac","BC"))
+StatsRes=expand.grid(similarity_slices=as.character(slices),predictors=predictors,metric=c("Jac","BC"))
 StatsRes[["F.Model"]]=StatsRes[["R2"]]=StatsRes[["Pr(>F)"]]=NA
 
-for (i in as.character(similarity_slices))
+for (i in as.character(slices))
 {
   for (j in predictors) 
   {
-   res=unlist(adonis(formula = MultipleBetaJac[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
+   res=unlist(adonis(formula = MultipleBetaJac[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(6,5,4)])
    StatsRes[(StatsRes$metric=="Jac")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),4:6]=res
-   res=unlist(adonis(formula = MultipleBetaBC[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
+   res=unlist(adonis(formula = MultipleBetaBC[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(6,5,4)])
    StatsRes[(StatsRes$metric=="BC")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),4:6]=res
    }
 }
 
 # Plotting
+ggplot(aes(y=F.Model,x=similarity_slices,colour=predictors,group=predictors),data=StatsRes)+geom_point()+geom_line()+facet_wrap(~metric)
+
 ggplot(aes(y=R2,x=similarity_slices,colour=predictors,group=predictors),data=StatsRes)+geom_point()+geom_line()+facet_wrap(~metric)
 ggsave("My_outputs/BDTT_Jaccard_BC.pdf",height = 7,width = 10)
+
+#Put only the points that are significants
+StatsRes$R2[StatsRes$`Pr(>F)`>.05]=NA
+ggplot(aes(y=R2,x=similarity_slices,colour=predictors,group=predictors),data=StatsRes)+geom_point()+geom_line()+facet_wrap(~metric)
+
+# Look more carefully at the effect of depth along the phylogenetic time scale
+plot(as.matrix(dist(sample_data(mothur)[,"Depth_m"])),MultipleBetaBC["0",,])
+plot(as.matrix(dist(sample_data(mothur)[,"Depth_m"])),MultipleBetaBC["0.125",,])
+
 

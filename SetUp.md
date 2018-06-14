@@ -30,12 +30,7 @@ workshop.
 
 ## Testing testing
 
-1. Do whatever is appropriate for your OS to launch RStudio. You should
-  get a window similar to the screenshot below.
-    +  If you don't see a window that is divided into distinct areas
-  labelled "Console", "Environment", etc., you are probably running
-  the user interface that comes bundled with R. Check that RStudio is
-  present in your applications and start it instead.
+1. Do whatever is appropriate for your OS to launch RStudio. 
   
 2. Put your cursor in the left pane labelled "Console", which is where you
   interact with the live R process. Create a simple object with code
@@ -76,7 +71,6 @@ Please install the following packages and their dependencies for use in this wor
 * betapart
 * abind
 * matrix
-* phytools
 * phyloseq
 
 ## Further resources

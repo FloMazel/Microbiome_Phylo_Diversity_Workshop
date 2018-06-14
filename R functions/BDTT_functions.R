@@ -1,8 +1,26 @@
 # BDTT for non-ultrametric trees
-library(phytools)
-library(betapart)
-library(abind)
-library(Matrix)
+#library(phytools)
+#library(betapart)
+#library(abind)
+#library(Matrix)
+
+#The first function is copied from phytools
+getDescendants=function (tree, node, curr = NULL) 
+{
+  #if (!inherits(tree, "phylo")) 
+   # stop("tree should be an object of class \\"phylo\\".")
+  if (is.null(curr)) 
+    curr <- vector()
+  daughters <- tree$edge[which(tree$edge[, 1] == node), 2]
+  curr <- c(curr, daughters)
+  if (length(curr) == 0 && node <= length(tree$tip.label)) 
+    curr <- node
+  w <- which(daughters > length(tree$tip.label))
+  if (length(w) > 0) 
+    for (i in 1:length(w)) curr <- getDescendants(tree, daughters[w[i]], 
+                                                  curr)
+  return(curr)
+}
 
 BDTT=function(similarity_slices,tree,sampleOTUs,onlyBeta=T,metric="jac"){
   
