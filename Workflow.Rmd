@@ -12,6 +12,8 @@ Some of this code as been adapted from the [ECOSCOPE GitHub account](https://git
 
 #### 4. [Diversity analysis in R ](#Diversity-analysis-in-R)
 
+#### 5. [PhyloFactor](#screening-all-the-nodes)
+
 ## 1. Prior to the workshop <a name="Prior"></a>
 
 ### Setup 
@@ -54,6 +56,8 @@ if (!require("abind")) install.packages("abind")
 if (!require("Matrix")) install.packages("Matrix")
 if (!require("phytools")) install.packages("phytools")
 if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("cowplot")) install.packages("cowplot")
+require(phylofactor)
 ```
 
 #### Setting your working directory 
@@ -165,13 +169,13 @@ On mac, you need to open a terminal and acces the software commands where it is 
 The FastTree function requires input on (1) the model used (here gtr + cat 20), (2) the evenutal topological constrains (hre the file "Phylogenetic_Constrains.fasta" we produces before in R), (3) the alignment (here "Saanich.final.opti_mcc.unique_list.0.03.rep_Names_Modified.fasta") and a name for the output tree (here we used "Saanish_FastTree"). You need to give the exact adress of the different files in the command line  (here my files are loacted in "Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/"). For further help on the the funciton, you can type: 
 
 ```{r, message=FALSE}
-Desktop/Programmes_Unix/FastTree -h
+#Desktop/Programmes_Unix/FastTree -h
 ```
 
 Now we run fastTree on our data:
 
 ```{r, message=FALSE}
-Desktop/Programmes_Unix/FastTree -gtr -cat 20 -constraints Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Phylogenetic_Constrains.fasta -nt Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Saanich.final.opti_mcc.unique_list.0.03.rep_Names_Modified.fasta > Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Saanish_FastTree
+#Desktop/Programmes_Unix/FastTree -gtr -cat 20 -constraints Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Phylogenetic_Constrains.fasta -nt Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Saanich.final.opti_mcc.unique_list.0.03.rep_Names_Modified.fasta > Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Saanish_FastTree
 ```
 
 For the sake of comparison, we will laso construct the tree WITHOUT topological constrains. In this case just remove the parameters "constrains" 
@@ -420,15 +424,9 @@ ggplot(aes(y=R2,x=similarity_slices,colour=predictors,group=factor(predictors)),
 ggsave("My_outputs/BDTT_Jaccard_BC.pdf",height = 7,width = 10)
 ```
 
-### 4.5. Screening all the nodes of the phylogeny: PhyloFactor and Balance Trees <a name="screening-all-the-nodes"></a>
+## 5. Screening all the nodes of the phylogeny: PhyloFactor <a name="screening-all-the-nodes"></a>
 
-#### 4.5.1. PhyloFactor
-
-```{r, message=FALSE}
-require(phylofactor)
-```
-
-#### Loading data
+### 5.1. Loading data
 
 We will load data the same data as above. PhyloFactor has some specific requirements for data format that will require further modifications, which are explained below.
 
@@ -460,7 +458,8 @@ taxonomy.clean = taxonomy %>%
 
 taxonomy <- taxonomy %>% select(-Size)
 taxonomy$OTU_ID = row.names(taxonomy)
-taxonomy <- taxonomy[rownames(OTU.matrix),]
+taxonomy <- taxonomy[Tree$tip.label, c('OTU_ID','Taxonomy')]
+taxonomy[,2] <- as.character(taxonomy[,2])
 ```
 
 The metadata:
@@ -474,7 +473,7 @@ metadata <- metadata[colnames(OTU.matrix),]
 ```
 
 
-#### Simulate factor on bacterial phylogeny
+### 5.2. Detecting a simulated variable on the bacterial phylogeny
 
 Fundamentally, PhyloFactorization is a method for seeing how characteristics change across a phylogeny, and identifying the edges of the phylogeny where they change most significantly. 
 
@@ -489,12 +488,15 @@ CellDiam <- rlnorm(length(Tree$tip.label))
 
 # let's make Arcobacter and Actinobacteria different from the rest
 
+# Grab a Boolean vector corresponding to the Arcobacter and Actinobacteria tip labels of the Tree object
 arcobacter <- Tree$tip.label %in% row.names(taxonomy.clean[taxonomy.clean$Genus == 'Arcobacter',])
 actinobacteria <- (Tree$tip.label %in% row.names(taxonomy.clean[taxonomy.clean$Phylum == 'Actinobacteria',]))
 
+# Change those tips to have new values for CellDiam drawn from a different distribution
 CellDiam[arcobacter] <- rlnorm(sum(arcobacter))*4
 CellDiam[actinobacteria] <- rlnorm(sum(actinobacteria))/4
 
+# Take the log of CellDiam variable for analysis
 logCellDiam <- log(CellDiam)
 ```
 
@@ -527,8 +529,12 @@ pf_twoSample$pvals
 
 We can also visualize these phylogenetic factors on the phylogeny itself using the `pf.tree` function in PhyloFactor, which creates a `ggtree` plot highlighting each returned factor:
 
-```{r}
+```{r, message=FALSE}
 cellDiam.tree <- pf.tree(pf_twoSample)
+
+# Note that the object created by pf.tree has two parts: $legend, which contains 
+# the colors used for each factor, and $ggplot, which has the ggplot object
+
 cellDiam.tree$ggplot
 ```
 
@@ -538,82 +544,85 @@ Factor colors are written out as a separate legend element in the returned objec
 cellDiam.tree$legend
 ```
 
-#### Testing for phylogenetic groups correlated with metadata: linear regression
+### 5.3. Testing for phylogenetic groups correlated with metadata: linear regression
 
-This will find the phylogenetic factors that vary most predictably with depth. By using the built-in choice function 'F', we are asserting that we want only the factors with the largest F score to be retained -- up to 9 factors. The `stop.early` parameter tells PhyloFactor to stop searching for new factors once it drops below a certain significance threshold (see the documentation for more on the heuristic used and its justification).
+This will find the phylogenetic factors that vary most predictably with depth. By using the built-in choice function 'F', we are asserting that we want only the factors with the largest F score to be retained -- up to 5 factors. The `stop.early` parameter tells PhyloFactor to stop searching for new factors once it drops below a certain significance threshold (see the documentation for more on the heuristic used and its justification).
 
 
-```{r}
-pf_depth_F <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 9, ncores=2, stop.early = T, choice='F')
+```{r, message=FALSE}
+pf_depth_F <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 5, ncores=2, stop.early = T, choice='F')
 ```
 
-
-We can then do the same for the next factor.
+Looking at the pf_depth_F PhyloFactor object, we can see that it has primarily founds tips and small clades that are strongly correlated with depth.
 
 ```{r}
-s_pf_depth.summary.2 <- summary(pf_depth_F, factor=2)
-
-s_pf_depth.summary.2
+pf_depth_F
 ```
 
-
-In this case, the factor actually comprises 19 tips in a single monophyletic clade.
-
+We can summarize the taxonomy of the first factor using `pf.taxa`:
 ```{r}
 pf.taxa(pf_depth_F, taxonomy, factor=2)$group1
 ```
 
-Which, it turns out, encompasses bacteria in the Rhodobacteraceae group of the Alphaproteobacteria. This factor also appears to be tightly correlated to depth:
+We see that it is a member of the Rhodobacteraceae, a photoheterotrophic lineage of Alphaproteobacteria. It would certainly make sense for this bacterium to be more abundant at shallower depths! We can use the `$data` element of the PhyloFactor summary object to plot the ILR-transformed relative abundances for this factor against depth, and see that it is in fact nicely correlated to depth:
 
 ```{r}
-ggplot(s_pf_depth.summary.2$data, aes(x = Depth_m, y = Data)) + 
+s_pf_depth.F.summary.1 <- summary(pf_depth_F, factor=1)
+
+ggplot(s_pf_depth.F.summary.1$data, aes(x = Depth_m, y = Data)) + 
 geom_point() + 
 geom_smooth(method='lm')
 ```
 
 
-The previous results were ranked according to the factors that had the strongest correlation, as measured by effect size (F). We can also rank factors according to the total proportion of variance explained, by setting `choice` equal to `'var'`:
+We can also check out the taxonomy of the second factor, which actually comprises 19 tips in a single monophyletic clade.
 
 ```{r}
-pf_depth_var <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 9, ncores=2, stop.early = T, choice='var')
+pf.taxa(pf_depth_F, taxonomy, factor=2)$group1
+```
+
+This clade of tips also belongs to the Rhodobacteraceae, and has a similar distribution:
+
+```{r}
+s_pf_depth.F.summary.2 <- summary(pf_depth_F, factor=2)
+
+ggplot(s_pf_depth.F.summary.2$data, aes(x = Depth_m, y = Data)) + 
+geom_point() + 
+geom_smooth(method='lm')
+```
+
+### 5.4. Partitioning the tree by total variance explained
+
+The previous results were ranked according to the factors that had the strongest correlation, as measured by effect size (F). We can also rank factors according to the total proportion of variance explained, by setting `choice` equal to `'var'`.
+
+```{r, message=FALSE}
+pf_depth_var <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 5, ncores=2, stop.early = T, choice='var')
 ```
 
 ```{r}
 pf_depth_var
 ```
 
-Note that when optimizing for total variance explained, PhyloFactor will tend to find larger clades, as they represent a larger overall proportion of the data. 
+Note that when optimizing for total variance explained, PhyloFactor will tend to find bigger clades, as they represent a larger overall proportion of the data. The F-scores are lower in this case than for the smaller factors, which indicate that some members of the clade are not following the same linear relationship with depth.
+
+We can see this, for examle, in the second PhyloFactor for the variance-paritioned tree. This factor represents a clade of Alphaproteobacteria, including the Rhodobacteraceae we found above:
 
 ```{r}
-s_pf_depth.var.summary.1 <- summary(pf_depth_var, factor=1)
+pf.taxa(pf_depth_var, taxonomy, factor=2)$group1
 ```
 
-```{r}
-pf.taxa(pf_depth_var, taxonomy, factor=1)$group1
-```
-
-Which, it turns out, encompasses bacteria in the Rhodobacteraceae group of the Alphaproteobacteria. This factor also appears to be tightly correlated to depth:
-
-```{r}
-ggplot(s_pf_depth.var.summary.1$data, aes(x = Depth_m, y = Data)) + 
-geom_point() + 
-geom_smooth(method='lm')
-```
+As you can see by plotting the ILR abundances of this entire clade against depth, the correlation is not as tight across the full range. Other bacteria in this clade may be especially more prominant at the very shallowest depths:
 
 ```{r}
 s_pf_depth.var.summary.2 <- summary(pf_depth_var, factor=2)
 
-pf.taxa(pf_depth_var, taxonomy, factor=2)$group1
-```
-
-```{r}
 ggplot(s_pf_depth.var.summary.2$data, aes(x = Depth_m, y = Data)) + 
 geom_point() + 
 geom_smooth(method='lm')
 ```
 
 
-#### Comparing phylofactorization with two groups
+### 5.5. Comparing phylofactorization with different independent variables
 
 Let's combine all we've practiced so far to visualize using PhyloFactorization how different clades of the bacterial phylogeny respond to changes in different variables in our dataset. 
 
@@ -637,7 +646,7 @@ inset_plot <- function(pf, factor, variable, color) {
 
 Now we can perform a phylofactorization of the bacterial phylogeny with respect to different variables of interest. We'll compare the bacterial groups responding to nitrate (NO3) and phosphate (PO4), two important and frequently limiting nutrients in oligotrophic environments. Let's grab the top three factors for each, according to total variance explained.
 
-```{r}
+```{r, message=FALSE}
 pf_NO3_var <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~NO3_uM, nfactors = 3, ncores=2, choice='var')
 
 pf_PO4_var <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~PO4_uM, nfactors = 3, ncores=2, choice='var')
@@ -645,7 +654,7 @@ pf_PO4_var <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~PO4_uM, n
 
 For each PhyloFactor object, we can use the `cowplot` library to combine separate `ggplot2` panels into a publication-ready image, showing both individual factors locations on the tree, and their response (in ILR-transformed space) to each predictor variable.
 
-```{r}
+```{r, message=FALSE}
 # Draw the PhyloFactors on the phylogeny
 NO3_tree = pf.tree(pf_NO3_var)
 
@@ -668,7 +677,8 @@ ggdraw() +
                   x = c(0, 0.67, .67,.67), y = c(1, 1, 0.66,0.33))
 
 ```
-```{r}
+
+```{r, message=FALSE}
 # Repeat for the phosphate PhyloFactors
 PO4_tree = pf.tree(pf_PO4_var)
 
@@ -686,3 +696,30 @@ ggdraw() +
                   x = c(0, 0.67, .67,.67), y = c(1, 1, 0.66,0.33))
 
 ```
+
+### 5.6. Other visualizations using PhyloFactor: phylogenetic heatmaps
+
+Heatmaps can help give us a better sense of how the data are actually distributed across samples and the tree. We can use the `pf.heatmap` function to draw both the tree (and highlight the relevant PhyloFactor partitions) and the (ILR-transformed) raw data for each tip:
+
+```{r, message=FALSE}
+pf.heatmap(pf_PO4_var, 
+           factors=1:3, 
+           column.order = order(metadata$PO4_uM),
+           low='purple',
+           high='yellow')
+```
+
+Heatmaps can also be used to illustrate the values predicted across the tree, using the linear models fit by PhyloFactorization above:
+
+```{r, message=FALSE}
+
+preds <- predict(pf_PO4_var)
+
+pf.heatmap(pf_PO4_var, 
+           factors=1:3, 
+           Data=preds,
+           column.order = order(metadata$PO4_uM),
+           low='purple',
+           high='yellow')
+```
+
