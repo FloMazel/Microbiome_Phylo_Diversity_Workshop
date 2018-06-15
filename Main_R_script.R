@@ -14,7 +14,7 @@ library(tidyr)
 library(Matrix)
 
 #Put here your working directory (i.e you need to replace the location of the file to match the location of the downloaded folder on YOUR computer)
-setwd("/Users/florentmqzel/Documents/GitHub/WorkingDirectory/")
+setwd("/Users/fmazel/Documents/GitHub/WorkingDirectory/")
 
 
 ################################################################################
@@ -30,9 +30,9 @@ taxonomy= taxonomy.raw %>%
   select(-Size) %>% 
   separate(Taxonomy, c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"), sep=";")
 
-#Change the name of the fasta alignment file 
+# load the alignment 
 alignment=read.fasta("data/mothur_intermediate_files/Saanich.final.opti_mcc.unique_list.0.03.rep.fasta")
-names(alignment)=rownames(taxonomy)
+names(alignment)=rownames(taxonomy) #Change the name of the fasta alignment file 
 
 #remove OTUS not assigned to a domain
 taxonomy=subset(taxonomy,!Domain=="unknown")
@@ -43,7 +43,7 @@ taxonomy[["Bacteria"]][taxonomy$Domain=="Archaea"]=0
 
 # Phylum constrains
 Phylum=unique(taxonomy$Phylum)
-Phylum=subset(Phylum,!Phylum=="unknown_unclassified") #remove this factor
+Phylum=subset(Phylum,!Phylum%in%c("unknown_unclassified","Bacteria_unclassified", "Archaea_unclassified")) #remove this factor
 
 for (i in Phylum)
   {
@@ -65,13 +65,13 @@ write.fasta(alignment, names=names(alignment), file.out="My_outputs/Saanich.fina
 # Part 1.2. Tree Reconstruction with FastTree
 #################################################
 
-# This part is NOT done in R, but directly on the terminal usifn the FastTree program 
+# This part is NOT done in R, but directly on the terminal using the FastTree program 
 
 # Run Fast Tree with taxonomic constrains
-#Desktop/Programmes_Unix/FastTree -gtr -cat 20 -constraints Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Phylogenetic_Constrains.fasta -nt Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Saanich.final.opti_mcc.unique_list.0.03.rep_Names_Modified.fasta > Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Saanish_FastTree
+#Desktop/Programmes_Unix/FastTree -gtr -cat 20 -constraints /Users/fmazel/Documents/GitHub/WorkingDirectory/My_outputs/Phylogenetic_Constrains.fasta -nt /Users/fmazel/Documents/GitHub/WorkingDirectory/My_outputs/Saanich.final.opti_mcc.unique_list.0.03.rep_Names_Modified.fasta > /Users/fmazel/Documents/GitHub/WorkingDirectory/My_outputs/Saanish_FastTree
 
 # Run Fast Tree without constrains
-#Desktop/Programmes_Unix/FastTree -gtr -cat 20 -nt Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Saanich.final.opti_mcc.unique_list.0.03.rep_Names_Modified.fasta > Desktop/Recherche/En_cours/workshopMicrobiome/Contenu/MyFiles/Saanish_FastTree_withoutConstrains
+#Desktop/Programmes_Unix/FastTree -gtr -cat 20 -nt /Users/fmazel/Documents/GitHub/WorkingDirectory/My_outputs/Saanich.final.opti_mcc.unique_list.0.03.rep_Names_Modified.fasta > /Users/fmazel/Documents/GitHub/WorkingDirectory/My_outputs/Saanish_FastTree_withoutConstrains
 
 # Part 1.3. Tree Visualization 
 #################################################
@@ -103,7 +103,7 @@ dev.off()
 # check the impact of the topological contrains 
 pdf("My_outputs/Phylogenetic_tree_colouredby_Phylum_NoConstrains.pdf",width=15,height=15)
 plot(TreeNoC,type="fan",cex=.3,tip.color=coloursPhylums[TreeNoC$tip.label])
-legend(1, 1, legend=names(palettePhylums),fill=paletteDomains, cex=1)
+legend(1, 1, legend=names(palettePhylums),fill=palettePhylums, cex=1)
 dev.off()
 
 # Part 1.4. Re-root the tree (Archaea Vs Bacteria)
@@ -158,11 +158,8 @@ metadata=metadata[,c("Depth_m","PO4_uM","SiO2_uM","NO3_uM","NH4_uM","CH4_nM" ,"S
 OTU.clean.physeq = otu_table(as.matrix(OTU.clean), taxa_are_rows=FALSE)
 tax.clean.physeq = tax_table(as.matrix(taxonomy.clean))
 metadata.physeq = sample_data(metadata)
-#Tree=drop.tip(Tree,sample(Tree$tip.label,3500))
-phylogeny.physeq=phy_tree(Tree)
 
-mothur = phyloseq(OTU.clean.physeq, tax.clean.physeq, metadata.physeq,phylogeny.physeq) #note how phyloseq discard OTUs from OTU table and taxonomy beqacsue they are not in the phylogeny 
-mothur
+phylogeny.physeq=phy_tree(Tree)
 
 # apply(otu_table(mothur),1,sum) # Number of reads by sample
 # At this point you can rarefy if needed
@@ -180,6 +177,8 @@ plot(Jaccard,UniFracBeta)
 # Visualize Beta 
 ordi = ordinate(mothur, "PCoA", "unifrac", weighted=F)
 plot_ordination(mothur, ordi, color="Depth_m")
+ggsave("My_outputs/PCoA_Unifrac.pdf",height = 4,width = 6)
+
 
 ordi = ordinate(mothur, "PCoA", "bray", weighted=F)
 plot_ordination(mothur, ordi, color="Depth_m")
@@ -188,6 +187,12 @@ plot_ordination(mothur, ordi, color="Depth_m")
 adonis(BC~Depth_m,data=data.frame(sample_data(mothur)))
 adonis(Jaccard~Depth_m,data=data.frame(sample_data(mothur)))
 adonis(UniFracBeta~Depth_m,data=data.frame(sample_data(mothur)))
+adonis(UniFracBeta~Depth_m+NO3_uM,data=data.frame(sample_data(mothur)))
+
+#the importance of phylogeny
+adonis(Jaccard~NO3_uM,data=data.frame(sample_data(mothur)))
+adonis(UniFracBeta~NO3_uM,data=data.frame(sample_data(mothur)))
+
 
 # 3. BDTT
 source("R functions/BDTT_functions.R")
@@ -208,7 +213,7 @@ saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_Jaccard.RDS")
 #Because it is slow to run, we will not run bray curtis but directly load it from the backUp
 MultipleBetaBC=readRDS("My_outputs/Multiple_Resolution_Beta_BrayCurtis.RDS")
 
-# 3. Statistical tests: 21 predictors * n number of slices = a lot of models!
+# 3. Statistical tests: m predictors * n number of slices = a lot of models!
 predictors=names(sample_data(mothur))
 StatsRes=expand.grid(similarity_slices=as.character(slices),predictors=predictors,metric=c("Jac","BC"))
 StatsRes[["F.Model"]]=StatsRes[["R2"]]=StatsRes[["Pr(>F)"]]=NA

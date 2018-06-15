@@ -52,7 +52,6 @@ if (!require("phyloseq")) install.packages("phyloseq")
 if (!require("betapart")) install.packages("betapart")
 if (!require("abind")) install.packages("abind")
 if (!require("Matrix")) install.packages("Matrix")
-if (!require("phytools")) install.packages("phytools")
 ```
 
 #### Setting your working directory 
