@@ -68,10 +68,26 @@ Please install the following packages and their dependencies for use in this wor
 * ape
 * sequinR
 * vegan
+* phyloseq
 * betapart
 * abind
-* matrix
-* phyloseq
+* Matrix
+* phytools
+* ggplot2
+* cowplot
+
+Additionally, you will need to install the package `PhyloFactor`. This is not yet
+available as a complete installable package on CRAN, so you will need to install
+from source. To do this, execute the following commands in RStudio after you 
+have installed all of the above packages.
+
+```{r}
+source("https://bioconductor.org/biocLite.R")
+biocLite("ggtree")
+biocLite("Biostrings")
+install.packages('devtools')
+devtools::install_github('reptalex/phylofactor')
+```
 
 ## Further resources
 
