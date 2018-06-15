@@ -42,22 +42,38 @@ Microbial units and the need of a phylogenetic framework
 
 At the beginning of every R script, you should have a dedicated space for loading R packages. R packages allow any R user to code reproducible functions and share them with the R community. Packages exist for anything ranging from microbial ecology to complex graphics to multivariate modeling and beyond. 
 
-In this workshop, we will use several packages 
-XXX
+In this workshop, we will use several packages:
+
+* tidyverse 
+* ape
+* sequinR
+* vegan
+* phyloseq
+* betapart
+* abind
+* Matrix
+* phytools
+* ggplot2
+* cowplot
+* phylofactor
+
+Please MAKE SURE they are installed in your computer. If not, refer to [setup instructions](https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/SetUp.md)
+
+#### Load the packages
 
 ```{r, message=FALSE}
-if (!require("seqinr")) install.packages("seqinr")
-if (!require("ape")) install.packages("ape")
-if (!require("vegan")) install.packages("vegan")
-if (!require("tidyverse")) install.packages("tidyverse")
-if (!require("phyloseq")) install.packages("phyloseq")
-if (!require("betapart")) install.packages("betapart")
-if (!require("abind")) install.packages("abind")
-if (!require("Matrix")) install.packages("Matrix")
-if (!require("phytools")) install.packages("phytools")
-if (!require("ggplot2")) install.packages("ggplot2")
-if (!require("cowplot")) install.packages("cowplot")
-require(phylofactor)
+library(seqinr)
+library(ape)
+library(vegan)
+library(tidyverse)
+library(phyloseq)
+library(betapart)
+library(abind)
+library(tidyr)
+library(Matrix)
+library(ggplot2)
+library(cowplot)
+library(phylofactor)
 ```
 
 #### Setting your working directory 
@@ -66,9 +82,14 @@ Copy the workshop folder "Working directory" from GitHub on your computer
 
 Then tell R that this is going to be the folder where we are going to work 
 
-In my case: 
+In Jon case: 
 ```{r, message=FALSE}
 setwd("/Users/jonsanders/Dropbox/Documents/Research/Education/Workshops/Microbiome_Phylo_Diversity_Workshop")
+```
+
+In Flo case: 
+```{r, message=FALSE}
+setwd("/Users/fmazel/Documents/GitHub/Microbiome_Phylo_Diversity_Workshop")
 ```
 
 #### Importing custom R functions
@@ -94,7 +115,7 @@ For example you can look at this [tutorial](https://github.com/FloMazel/Microbio
 
 Typical read length in microbiome studies are relatively short and have thus contains limited information to reconstruct phylogeentic trees, especially to reconstruct deep branches. To avoid biased phylogenies, we thus constrains deep branches to follow taxonomic classification as it is admitted that large taxonomic clades are monophyletic (informations based on longer sequences). The choice of the constrains is not easy. Here we will constain tree reconstruction by Domain (Bacteria/Archea) and phylums.
 
-We will use FastTree to reconstruct the phylogeneic hypotheses. While fastTree is not the best software to reconstruct phylogenies (because it makes a lot of approximations), it has the huge avantage to be fast, which is often critical in microbial species, as there are a very high number of species. 
+We will use FastTree to reconstruct the phylogeneic hypotheses. While fastTree is not the best software to reconstruct phylogenies (because it makes a lot of approximations), it has the huge avantage to be fast, which is often critical in microbial species, as there are a very high number of "species". 
 
 #### Topological constrains
 
@@ -131,7 +152,7 @@ Phylum constrains
 
 ```{r, message=FALSE}
 Phylum=unique(taxonomy$Phylum)
-Phylum=subset(Phylum,!Phylum=="unknown_unclassified") #remove this factor
+Phylum=subset(Phylum,!Phylum%in%c("unknown_unclassified","Bacteria_unclassified", "Archaea_unclassified")) #remove this factor
 
 for (i in Phylum)
   {
@@ -216,7 +237,7 @@ We can do the same for phylum instead of domain.
 Phylums=unique(taxonomy$Phylum)
 palettePhylums=rainbow(length(Phylums));names(palettePhylums)=Phylums #define colours for taxonomic groups (Phylums here)
 coloursPhylums=palettePhylums[as.character(taxonomy$Phylum)];names(coloursPhylums)=rownames(taxonomy) #assign colors to each OTU depending on its taxonomic group 
-pdf("My_outputs/Phylogenetic_tree_colouredby_Phylum.pdf",width=15,height=15)
+pdf("My_outputs/Phylogenetic_tree_colouredby_Phylum_with_Constrains.pdf",width=15,height=15)
 plot(Tree,type="fan",cex=.3,tip.color=coloursPhylums[Tree$tip.label])
 legend(1, 1, legend=names(palettePhylums),fill=palettePhylums, cex=1)
 dev.off()
@@ -265,7 +286,7 @@ legend(1, 0, legend=names(paletteDomains),fill=paletteDomains, cex=2)
 dev.off()
 ```
 
-We now have a better tree. And we are going to use it to analyse microbiome composition patterns!
+We now have a better tree. And we are going to use it to document microbiome composition patterns!
 
 ## 4. Diversity analysis in R <a name="Diversity-analysis-in-R"></a>
 
@@ -314,7 +335,6 @@ and then assemble them
 
 ```{r, message=FALSE}
 mothur = phyloseq(OTU.clean.physeq, tax.clean.physeq, metadata.physeq,phylogeny.physeq) 
-mothur
 ```
 
 
@@ -326,7 +346,6 @@ We first compute classic metrics of beta-diversity
 BC=vegdist(otu_table(mothur),method = "bray")
 Jaccard=vegdist(otu_table(mothur),method = "jac")
 UniFracBeta=UniFrac(mothur)
-UniFracWBeta=UniFrac(mothur,weighted = T)
 ```
 
 We can then plot them to see how much correlated they are
@@ -354,7 +373,16 @@ Importantly, we should also test the statistical relationship between microbiome
 adonis(BC~Depth_m,data=data.frame(sample_data(mothur)))
 adonis(Jaccard~Depth_m,data=data.frame(sample_data(mothur)))
 adonis(UniFracBeta~Depth_m,data=data.frame(sample_data(mothur)))
+adonis(UniFracBeta~Depth_m+NO3_uM,data=data.frame(sample_data(mothur)))
 ```
+
+Compare the correlation between environement and taxonomic or phylogenetic compositions
+
+```{r, message=FALSE}
+adonis(Jaccard~NO3_uM,data=data.frame(sample_data(mothur)))
+adonis(UniFracBeta~NO3_uM,data=data.frame(sample_data(mothur)))
+```
+
 
 ### 4.3. Screening the phylogenetic scale <a name="BDTT"></a>
 
@@ -381,14 +409,20 @@ We first extract a OTU table matrix from the phyloseq object
 mat=t(as(otu_table(mothur), "matrix"))
 ```
 
-and then run the analysis (for Jaccard and Bray Curtis)
+and then run the analysis (for Jaccard and Bray Curtis) and explore the structure of the output (an "array") 
 
 ```{r, message=FALSE}
 MultipleBetaJac=BDTT(similarity_slices=slices,tree=Tree,sampleOTUs=mat,onlyBeta=T,metric="jac")
+class(MultipleBetaJac)
+dim(MultipleBetaJac)
+MultipleBetaJac
 saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_Jaccard.RDS")  
+```
 
-MultipleBetaBC=BDTT(similarity_slices=slices,tree=Tree,sampleOTUs=mat,onlyBeta=T,metric="bc")
-saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_BrayCurtis.RDS")  
+
+Because it is slow to run (sorry for my code), we will not run bray curtis but directly load it from the BackUp
+```{r, message=FALSE}
+MultipleBetaBC=readRDS("My_outputsBackUp/Multiple_Resolution_Beta_BrayCurtis.RDS")
 ```
 
 #### 4.3.2. Statistical link to metadata
@@ -401,7 +435,9 @@ We first prepare the result table:
 predictors=names(sample_data(mothur))
 StatsRes=expand.grid(similarity_slices=as.character(slices),predictors=predictors,metric=c("Jac","BC"))
 StatsRes[["F.Model"]]=StatsRes[["R2"]]=StatsRes[["Pr(>F)"]]=NA
+head(StatsRes)
 ```
+
 and then "fill" it without the models that we construct in loop: 
 
 ```{r, message=FALSE}
@@ -421,7 +457,7 @@ We can then plot the profiles of R2 along the phylogenetic time scale:
 
 ```{r, message=FALSE}
 ggplot(aes(y=R2,x=similarity_slices,colour=predictors,group=factor(predictors)),data=StatsRes)+geom_point()+geom_line()+facet_wrap(~metric)
-ggsave("My_outputs/BDTT_Jaccard_BC.pdf",height = 7,width = 10)
+ggsave("My_outputs/BDTT_Jaccard_BC.pdf",height = 7,width = 13)
 ```
 
 ## 5. Screening all the nodes of the phylogeny: PhyloFactor <a name="screening-all-the-nodes"></a>

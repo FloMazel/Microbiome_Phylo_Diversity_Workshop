@@ -18,6 +18,8 @@ workshop.
 
 * [Install FastTree](http://www.microbesonline.org/fasttree/#Install), a free software. Follow the instruction given on the website
 
+You will have to use FastTree on the terminal (MacOS and Linux) or the Command Prompt (Windows)
+
 ## R and RStudio
 
 * [Install R](http://www.r-project.org), a free software environment for statistical
@@ -28,7 +30,7 @@ workshop.
     + If you currently have R installed on your laptop, please make sure it is version 3.2.0 or later. *Please update if it is not!*
 * [Install RStudio](https://www.rstudio.com/products/rstudio/download/), a powerful user interface for R.
 
-## Testing testing
+## Testing
 
 1. Do whatever is appropriate for your OS to launch RStudio. 
   
@@ -87,6 +89,23 @@ biocLite("ggtree")
 biocLite("Biostrings")
 install.packages('devtools')
 devtools::install_github('reptalex/phylofactor')
+```
+
+Please make SURE that all packahes are correctly installed, by running these lines in R:
+
+```{r}
+library(seqinr)
+library(ape)
+library(vegan)
+library(tidyverse)
+library(phyloseq)
+library(betapart)
+library(abind)
+library(tidyr)
+library(Matrix)
+library(ggplot2)
+library(cowplot)
+library(phylofactor)
 ```
 
 ## Further resources
