@@ -6,7 +6,7 @@ Some of this code as been adapted from the [ECOSCOPE GitHub account](https://git
 
 #### 1. [Prior to the workshop](#Prior)
 
-#### 2. [Introduction](#Introduction)
+#### 2. [Getting started with R ](#Introduction)
 
 #### 3. [Building a microbial phylogenetic tree](#Building-a-microbial-phylogenetic-tree)
 
@@ -30,15 +30,9 @@ Please read [Hallam SJ *et al*. 2017. Sci Data 4: 170158](https://www.ncbi.nlm.n
 The data in this workshop were collected as part of an on-going oceanographic time series program in Saanich Inlet, a seasonally anoxic fjord on the East coast of Vancouver Island, British Columbia 
 
 
-## 2. Introduction <a name="Introduction"></a>
+## 2. Getting started with R  <a name="Introduction"></a>
 
-### 2.1. Theory
-General concepts: Alpha, Beta and Gamma diversity
-Microbial units and the need of a phylogenetic framework
-
-### 2.2. Getting started with R 
-
-#### Installing and loading packages
+### Installing and loading packages
 
 At the beginning of every R script, you should have a dedicated space for loading R packages. R packages allow any R user to code reproducible functions and share them with the R community. Packages exist for anything ranging from microbial ecology to complex graphics to multivariate modeling and beyond. 
 
@@ -59,7 +53,7 @@ In this workshop, we will use several packages:
 
 Please MAKE SURE they are installed in your computer. If not, refer to [setup instructions](https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/SetUp.md)
 
-#### Load the packages
+### Load the packages
 
 ```{r, message=FALSE}
 library(seqinr)
@@ -76,7 +70,7 @@ library(cowplot)
 library(phylofactor)
 ```
 
-#### Setting your working directory 
+### Setting your working directory 
 
 Copy the workshop folder "Working directory" from GitHub on your computer
 
@@ -92,7 +86,7 @@ In Flo case:
 setwd("/Users/fmazel/Documents/GitHub/Microbiome_Phylo_Diversity_Workshop")
 ```
 
-#### Importing custom R functions
+### Importing custom R functions
 
 We have written some custom R functions for use in this workshop. It is good
 practice to define these functions in a separate file and then to import them

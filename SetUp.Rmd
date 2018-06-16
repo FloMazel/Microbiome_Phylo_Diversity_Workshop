@@ -91,7 +91,7 @@ install.packages('devtools')
 devtools::install_github('reptalex/phylofactor')
 ```
 
-Please make SURE that all packahes are correctly installed, by running these lines in R:
+Please make SURE that all packages are correctly installed BEFORE the workshop, by running these lines in R:
 
 ```{r}
 library(seqinr)
@@ -107,6 +107,8 @@ library(ggplot2)
 library(cowplot)
 library(phylofactor)
 ```
+
+IF you run into problems, email us at flo.mazel'at'gmailcom and jonsan'at'gmail.com
 
 ## Further resources
 
