@@ -22,7 +22,7 @@ You will have to use FastTree on the terminal (MacOS and Linux) or the Command P
 
 [Path to the software]/FastTree -help 
 
-"[Path to the software]" refers to the location of FastTree on YOUR computer (e.g. the desktop if you installed in on the desktop). For example, in my case it is FastTree is located here "Desktop/Programmes_Unix/" so that, in the terminal, I run "Desktop/Programmes_Unix/FastTree -help "
+"[Path to the software]" refers to the location of FastTree on YOUR computer (e.g. the desktop if you installed in on the desktop). For example, in my case, FastTree is located here: "Desktop/Programmes_Unix/"; so that, in the terminal, I run "Desktop/Programmes_Unix/FastTree -help "
 
 
 ## R and RStudio
