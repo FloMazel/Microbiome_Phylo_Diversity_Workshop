@@ -40,7 +40,7 @@ In this workshop, we will use several packages:
 
 * tidyverse 
 * ape
-* sequinR
+* seqinR
 * vegan
 * phyloseq
 * betapart
@@ -79,7 +79,6 @@ library(betapart)
 library(abind)
 library(tidyr)
 library(Matrix)
-library(ggplot2)
 library(cowplot)
 library(phylofactor)
 ```
