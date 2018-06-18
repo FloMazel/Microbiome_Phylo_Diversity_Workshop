@@ -356,7 +356,6 @@ plot_ordination(saanish, ordi, color="Depth_m")
 #' or Bray Curtis: 
 #' 
 ## ---- message=FALSE------------------------------------------------------
-
 ordi = ordinate(saanish, "PCoA", distance=BC)
 plot_ordination(saanish, ordi, color="Depth_m")
 
@@ -416,7 +415,7 @@ saveRDS(MultipleBetaJac,"My_outputs/Multiple_Resolution_Beta_Jaccard.RDS")
 #' 
 #' Because it is slow to run (sorry for my code), we will not run bray curtis but directly load it from the BackUp
 ## ---- message=FALSE------------------------------------------------------
-MultipleBetaBC=readRDS("My_outputsBackUp/Multiple_Resolution_Beta_BrayCurtis.RDS")
+MultipleBetaBC=readRDS("My_outputs_BackUp/Multiple_Resolution_Beta_BrayCurtis.RDS")
 
 #' 
 #' #### 4.3.2. Statistical link to metadata
