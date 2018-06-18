@@ -93,7 +93,7 @@ getHnode=function(node,tree)
   NH=node.depth.edgelength(tree)
   DescNodes=getDescendants(node=node,tree=tree)
   DescTips=DescNodes[DescNodes%in%tips]
-  Hnode=max(NH[DescTips]-NH[node])
+  Hnode=max(NH[DescTips]-NH[node])# take the longest branches to define node height
   return(Hnode)
 }
 

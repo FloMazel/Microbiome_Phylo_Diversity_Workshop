@@ -76,11 +76,6 @@ Copy the workshop folder "Working directory" from GitHub on your computer
 
 Then tell R that this is going to be the folder where we are going to work 
 
-In Jon case: 
-```{r, message=FALSE}
-setwd("/Users/jonsanders/Dropbox/Documents/Research/Education/Workshops/Microbiome_Phylo_Diversity_Workshop")
-```
-
 In Flo case: 
 ```{r, message=FALSE}
 setwd("/Users/fmazel/Documents/GitHub/Microbiome_Phylo_Diversity_Workshop")
@@ -155,6 +150,7 @@ for (i in Phylum)
   }
 
 Constrains=taxonomy[,c("Bacteria",as.character(Phylum))] #keep only the constrains 
+head(Constrains)
 ```
 
 Convert to fasta file
@@ -206,6 +202,7 @@ We now are coming back to R. We first need to load the trees we just constructed
 ```{r, message=FALSE}
 Tree=read.tree('My_outputs/Saanish_FastTree')
 TreeNoC=read.tree('My_outputs/Saanish_FastTree_withoutConstrains')
+Tree
 ```
 
 We can now plot the tree, with colours for Domains. First creating a palette of colours for the Domains and assign each OTU a color based on that. 
@@ -312,6 +309,7 @@ The metadata:
 ```{r, message=FALSE}
 metadata = read.table("data/Saanich_cruise72_metadata.txt", sep="\t", header=TRUE, row.names=1)
 metadata=metadata[,c("Depth_m","PO4_uM","SiO2_uM","NO3_uM","NH4_uM","CH4_nM" ,"Salinity_PSU")]
+head(metadata)
 ```
 
 We then Construct the phyloseq object:
@@ -328,7 +326,8 @@ phylogeny.physeq=phy_tree(Tree)
 and then assemble them
 
 ```{r, message=FALSE}
-mothur = phyloseq(OTU.clean.physeq, tax.clean.physeq, metadata.physeq,phylogeny.physeq) 
+saanish = phyloseq(OTU.clean.physeq, tax.clean.physeq, metadata.physeq,phylogeny.physeq) 
+saanish
 ```
 
 
@@ -337,9 +336,9 @@ mothur = phyloseq(OTU.clean.physeq, tax.clean.physeq, metadata.physeq,phylogeny.
 We first compute classic metrics of beta-diversity
 
 ```{r, message=FALSE}
-BC=vegdist(otu_table(mothur),method = "bray")
-Jaccard=vegdist(otu_table(mothur),method = "jac")
-UniFracBeta=UniFrac(mothur)
+BC=vegdist(otu_table(saanish),method = "bray")
+Jaccard=vegdist(otu_table(saanish),method = "jac")
+UniFracBeta=UniFrac(saanish)
 ```
 
 We can then plot them to see how much correlated they are
@@ -350,31 +349,31 @@ plot(Jaccard,UniFracBeta)
 And then visualize the pattern of microbiome composition in relation to the metadata, for Unifrac:
 
 ```{r, message=FALSE}
-ordi = ordinate(mothur, "PCoA", "unifrac", weighted=F)
-plot_ordination(mothur, ordi, color="Depth_m")
+ordi = ordinate(saanish, "PCoA", distance=UniFracBeta)
+plot_ordination(saanish, ordi, color="Depth_m")
 ```
 
 or Bray Curtis: 
 
 ```{r, message=FALSE}
-ordi = ordinate(mothur, "PCoA", "bray", weighted=F)
-plot_ordination(mothur, ordi, color="Depth_m")
+ordi = ordinate(saanish, "PCoA", distance=BC)
+plot_ordination(saanish, ordi, color="Depth_m")
 ```
 
 Importantly, we should also test the statistical relationship between microbiome beta-diversity and the metadata, using for example a PERMANOVA test: 
 
 ```{r, message=FALSE}
-adonis(BC~Depth_m,data=data.frame(sample_data(mothur)))
-adonis(Jaccard~Depth_m,data=data.frame(sample_data(mothur)))
-adonis(UniFracBeta~Depth_m,data=data.frame(sample_data(mothur)))
-adonis(UniFracBeta~Depth_m+NO3_uM,data=data.frame(sample_data(mothur)))
+adonis(BC~Depth_m,data=data.frame(sample_data(saanish)))
+adonis(Jaccard~Depth_m,data=data.frame(sample_data(saanish)))
+adonis(UniFracBeta~Depth_m,data=data.frame(sample_data(saanish)))
+adonis(UniFracBeta~Depth_m+NO3_uM,data=data.frame(sample_data(saanish)))
 ```
 
 Compare the correlation between environement and taxonomic or phylogenetic compositions
 
 ```{r, message=FALSE}
-adonis(Jaccard~NO3_uM,data=data.frame(sample_data(mothur)))
-adonis(UniFracBeta~NO3_uM,data=data.frame(sample_data(mothur)))
+adonis(Jaccard~NO3_uM,data=data.frame(sample_data(saanish)))
+adonis(UniFracBeta~NO3_uM,data=data.frame(sample_data(saanish)))
 ```
 
 
@@ -400,7 +399,7 @@ The idea the is to compute beta-doversity matrices for all these slices:
 
 We first extract a OTU table matrix from the phyloseq object
 ```{r, message=FALSE}
-mat=t(as(otu_table(mothur), "matrix"))
+mat=t(as(otu_table(saanish), "matrix"))
 ```
 
 and then run the analysis (for Jaccard and Bray Curtis) and explore the structure of the output (an "array") 
@@ -426,7 +425,7 @@ As for the simple beta-diversity tests, we then link the microbiome composition 
 We first prepare the result table: 
 
 ```{r, message=FALSE}
-predictors=names(sample_data(mothur))
+predictors=names(sample_data(saanish))
 StatsRes=expand.grid(similarity_slices=as.character(slices),predictors=predictors,metric=c("Jac","BC"))
 StatsRes[["F.Model"]]=StatsRes[["R2"]]=StatsRes[["Pr(>F)"]]=NA
 head(StatsRes)
@@ -439,9 +438,9 @@ for (i in as.character(slices))
 {
   for (j in predictors) 
   {
-   res=unlist(adonis(formula = MultipleBetaJac[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
+   res=unlist(adonis(formula = MultipleBetaJac[i,,]~data.frame(sample_data(saanish))[,j])$aov.tab[1,c(4,5,6)])
    StatsRes[(StatsRes$metric=="Jac")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),4:6]=res
-   res=unlist(adonis(formula = MultipleBetaBC[i,,]~data.frame(sample_data(mothur))[,j])$aov.tab[1,c(4,5,6)])
+   res=unlist(adonis(formula = MultipleBetaBC[i,,]~data.frame(sample_data(saanish))[,j])$aov.tab[1,c(4,5,6)])
    StatsRes[(StatsRes$metric=="BC")&(StatsRes$predictors==j)&(StatsRes$similarity_slices==i),4:6]=res
    }
 }
