@@ -17,7 +17,7 @@ most ecosystems (from animal guts to the deep ocean) and driving the bulk of glo
 ## To do BEFORE the workshop 
 
 Please come to the workshop with your laptop set up with the required
-software and data files as described in our [setup instructions](https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/SetUp.md).
+software and data files as described in our [setup instructions](https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/SetUp.Rmd).
 
 
 ## Content of this page
