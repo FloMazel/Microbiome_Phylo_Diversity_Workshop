@@ -18,7 +18,12 @@ workshop.
 
 * [Install FastTree](http://www.microbesonline.org/fasttree/#Install), a free software. Follow the instruction given on the website
 
-You will have to use FastTree on the terminal (MacOS and Linux) or the Command Prompt (Windows)
+You will have to use FastTree on the terminal (MacOS and Linux) or the Command Prompt (Windows). Make sure you know where FastTree is installed on your computer so you will be able to call it in from the terminal or CommandPrompt. To test it, try to get the help pages by running from the terminal or Command Prompt:
+
+[Path to the software]/FastTree -help 
+
+"[Path to the software]" refers to the location of FastTree on YOUR computer (e.g. the desktop if you installed in on the desktop). For example, in my case it is FastTree is located here "Desktop/Programmes_Unix/" so that, in the terminal, I run "Desktop/Programmes_Unix/FastTree -help "
+
 
 ## R and RStudio
 
