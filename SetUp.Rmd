@@ -63,17 +63,16 @@ To install a
 package in RStudio:
 
 1. Go to the "Tools" menu and choose  "Install Packages" or click "Install" in the Packages area in the lower right pane of RStudio.
-2. The following window appears: ![](images/packages_screenshot.png)
-3. Enter the name of the desired package
+2. Enter the name of the desired package
     + The checkmark by
    "Install dependencies" should be **on**.
-4. Click on the "Install" button
+3. Click on the "Install" button
 
 Please install the following packages and their dependencies for use in this workshop:
 
 * tidyverse 
 * ape
-* sequinR
+* seqinR
 * vegan
 * betapart
 * abind
