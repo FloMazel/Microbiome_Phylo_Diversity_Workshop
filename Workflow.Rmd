@@ -47,7 +47,6 @@ In this workshop, we will use several packages:
 * abind
 * Matrix
 * phytools
-* ggplot2
 * cowplot
 * phylofactor
 
