@@ -40,18 +40,30 @@
 #' 
 #' * tidyverse 
 #' * ape
-#' * sequinR
+#' * seqinr
 #' * vegan
 #' * phyloseq
 #' * betapart
 #' * abind
 #' * Matrix
-#' * phytools
-#' * ggplot2
 #' * cowplot
 #' * phylofactor
 #' 
-#' Please MAKE SURE they are installed in your computer. If not, refer to [setup instructions](https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/SetUp.md)
+#' Note that `PhyloFactor` is not yet
+#' available as a complete installable package on CRAN, so you will need to install
+#' from source. To do this, execute the following commands in RStudio after you 
+#' have installed all of the above packages.
+#' 
+## ------------------------------------------------------------------------
+source("https://bioconductor.org/biocLite.R")
+biocLite("ggtree")
+biocLite("Biostrings")
+install.packages('devtools')
+devtools::install_github('reptalex/phylofactor')
+
+#' 
+#' 
+#' Please MAKE SURE they are installed in your computer. If not, refer to [setup instructions](https://github.com/FloMazel/Microbiome_Phylo_Diversity_Workshop/blob/master/SetUp.Rmd)
 #' 
 #' ### Load the packages
 #' 
@@ -65,7 +77,6 @@ library(betapart)
 library(abind)
 library(tidyr)
 library(Matrix)
-library(ggplot2)
 library(cowplot)
 library(phylofactor)
 
@@ -579,6 +590,7 @@ cellDiam.tree$legend
 #' 
 #' 
 ## ---- message=FALSE------------------------------------------------------
+OTU.matrix <- OTU.matrix[Tree$tip.label,]
 pf_depth_F <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 5, ncores=2, stop.early = T, choice='F')
 
 #' 

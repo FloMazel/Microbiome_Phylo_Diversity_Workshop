@@ -72,7 +72,7 @@ Please install the following packages and their dependencies for use in this wor
 
 * tidyverse 
 * ape
-* seqinR
+* seqinr
 * vegan
 * betapart
 * abind
