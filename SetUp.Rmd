@@ -91,7 +91,7 @@ biocLite('phyloseq')
 biocLite("ggtree")
 biocLite("Biostrings")
 install.packages('devtools')
-devtools::install_github('reptalex/phylofactor')
+devtools::install_github('reptalex/phylofactor', ref = '53ba93f02aee0e63c1e5a0ab2df0f5f976f08643')
 ```
 
 Please make SURE that all packages are correctly installed BEFORE the workshop, by running these lines in R:

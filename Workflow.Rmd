@@ -60,7 +60,7 @@ source("https://bioconductor.org/biocLite.R")
 biocLite("ggtree")
 biocLite("Biostrings")
 install.packages('devtools')
-devtools::install_github('reptalex/phylofactor')
+devtools::install_github('reptalex/phylofactor', ref = '53ba93f02aee0e63c1e5a0ab2df0f5f976f08643')
 ```
 
 
@@ -594,6 +594,12 @@ This will find the phylogenetic factors that vary most predictably with depth. B
 pf_depth_F <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 5, ncores=2, stop.early = T, choice='F')
 ```
 
+(if you have an error on this function, you can load the backup stored object by uncommenting and running the line below)
+
+```{r, message=FALSE}
+# readRDS('./My_outputs_BackUp/pf_depth_F.RDS')
+```
+
 Looking at the pf_depth_F PhyloFactor object, we can see that it has primarily founds tips and small clades that are strongly correlated with depth.
 
 ```{r}
@@ -638,6 +644,12 @@ The previous results were ranked according to the factors that had the strongest
 
 ```{r, message=FALSE}
 pf_depth_var <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 5, ncores=2, stop.early = T, choice='var')
+```
+
+(if you have an error on this function, you can load the backup stored object by uncommenting and running the line below)
+
+```{r, message=FALSE}
+# readRDS('./My_outputs_BackUp/pf_depth_var.RDS')
 ```
 
 ```{r}
@@ -692,6 +704,15 @@ pf_NO3_var <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~NO3_uM, n
 
 pf_PO4_var <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~PO4_uM, nfactors = 3, ncores=2, choice='var')
 ```
+
+
+(if you have an error on this function, you can load the backup stored object by uncommenting and running the lines below)
+
+```{r, message=FALSE}
+# readRDS('./My_outputs_BackUp/pf_NO3_var.RDS')
+# readRDS('./My_outputs_BackUp/pf_PO4_var.RDS')
+```
+
 
 For each PhyloFactor object, we can use the `cowplot` library to combine separate `ggplot2` panels into a publication-ready image, showing both individual factors locations on the tree, and their response (in ILR-transformed space) to each predictor variable.
 
