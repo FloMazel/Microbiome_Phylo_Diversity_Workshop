@@ -40,13 +40,12 @@ In this workshop, we will use several packages:
 
 * tidyverse 
 * ape
-* seqinR
+* seqinr
 * vegan
 * phyloseq
 * betapart
 * abind
 * Matrix
-* phytools
 * cowplot
 * phylofactor
 
@@ -591,6 +590,7 @@ This will find the phylogenetic factors that vary most predictably with depth. B
 
 
 ```{r, message=FALSE}
+OTU.matrix <- OTU.matrix[Tree$tip.label,]
 pf_depth_F <- PhyloFactor(OTU.matrix, Tree, X = metadata, frmla = Data~Depth_m, nfactors = 5, ncores=2, stop.early = T, choice='F')
 ```
 
